@@ -56,7 +56,32 @@ const loginUser = async (mobile, password) => {
     };
 };
 
+const adminLogin = async (email, password) => {
+  const admin = await User.findOne({
+    email,
+    role: "admin",
+    isActive: true
+  });
+
+  if (!admin) {
+    throw new Error("Admin not found");
+  }
+
+  if (admin.password !== password) {
+    throw new Error("Invalid admin password");
+  }
+
+  const token = jwt.sign(
+    { id: admin._id, role: "admin" },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  return { token, admin };
+};
+
 module.exports = {
-    registerUser,
-    loginUser
+  registerUser,
+  loginUser,
+  adminLogin
 };
