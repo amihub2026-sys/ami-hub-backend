@@ -1,28 +1,70 @@
 const Profile = require("../models/Profile");
 
-const createProfile = async (req, res) => {
-  try {
-    const profile = await Profile.create({
-      userId: req.user._id,
-      fullName: req.body.fullName,
-      businessName: req.body.businessName,
-      mobile: req.body.mobile,
-      email: req.body.email,
-      city: req.body.city,
-      address: req.body.address
-    });
+const createProfile = async (req,res)=>{
 
-    res.status(201).json({
-      success: true,
-      message: "Profile Created Successfully",
-      data: profile
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
+try{
+
+
+const profile = await Profile.create({
+
+userId:req.user._id,
+
+fullName:req.body.fullName,
+
+businessName:req.body.businessName || "",
+
+mobile:req.body.mobile,
+
+email:req.body.email,
+
+
+accountType:req.body.accountType || "",
+
+category:req.body.category || "",
+
+city:req.body.city || "",
+
+address:req.body.address || "",
+
+profileImage:req.body.profileImage || null,
+
+kycImage:req.body.kycImage || null,
+
+qrCodeImage:req.body.qrCodeImage || null,
+
+rating:req.body.rating || 4,
+
+verified:req.body.verified || false,
+
+termsAccepted:req.body.termsAccepted || false
+
+});
+
+
+res.status(201).json({
+
+success:true,
+
+message:"Profile Created Successfully",
+
+data:profile
+
+});
+
+
+}
+catch(error){
+
+res.status(400).json({
+
+success:false,
+
+message:error.message
+
+});
+
+}
+
 };
 
 const getMyProfile = async (req, res) => {

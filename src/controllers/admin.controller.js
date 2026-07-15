@@ -209,6 +209,34 @@ const deletePost = async (req, res) => {
   }
 };
 
+const updateUserStatus = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { isActive: req.body.isActive },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User status updated",
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   getDashboard,
   getAllUsers,
@@ -216,5 +244,6 @@ module.exports = {
   getAllReports,
   approvePost,
   rejectPost,
-  deletePost
+  deletePost,
+  updateUserStatus
 };
