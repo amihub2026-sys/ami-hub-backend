@@ -18,37 +18,71 @@ const registerUser = async (data) => {
     );
 
     const user = await User.create({
-        fullName: data.fullName,
-        mobile: data.mobile,
-        email: data.email,
-        password: hashedPassword
-    });
+
+    fullName: data.fullName,
+
+    mobile: data.mobile,
+
+    email: data.email,
+
+    username: data.username,
+
+    password: hashedPassword,
+
+    role: "user",
+
+    isActive: true,
+
+    isOnboardingCompleted: false
+
+});
 
     return user;
 };
 
-const loginUser = async (mobile, password) => {
+const loginUser = async (identifier, password) => {
 
-    const user = await User.findOne({ mobile });
+    console.log("LOGIN IDENTIFIER:", identifier);
+    console.log("LOGIN PASSWORD:", password);
+
+
+    const user = await User.findOne({
+      $or:[
+        {mobile: identifier},
+        {email: identifier},
+        {username: identifier}
+      ]
+    });
+
+
+    console.log("FOUND USER:", user);
+
 
     if (!user) {
         throw new Error("User not found");
     }
+
 
     const isMatch = await bcrypt.compare(
         password,
         user.password
     );
 
+
+    console.log("PASSWORD MATCH:", isMatch);
+
+
     if (!isMatch) {
         throw new Error("Invalid password");
     }
+
 
     const token = jwt.sign(
         { id: user._id },
         process.env.JWT_SECRET,
         { expiresIn: "7d" }
     );
+
 
     return {
         token,

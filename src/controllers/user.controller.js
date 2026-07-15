@@ -50,6 +50,63 @@ const getDashboard = async (req, res) => {
   }
 };
 
+const User = require("../models/User");
+
+
+const updateOnboarding = async (req, res) => {
+
+  try {
+
+    const user = await User.findByIdAndUpdate(
+
+      req.user._id,
+
+      {
+        usertypeid: req.body.usertypeid,
+        listingtype: req.body.listingtype || null,
+        isOnboardingCompleted: true
+      },
+
+      {
+        new: true
+      }
+
+    );
+
+
+    if (!user) {
+
+      return res.status(404).json({
+        success:false,
+        message:"User not found"
+      });
+
+    }
+
+
+    res.status(200).json({
+
+      success:true,
+      message:"Account setup completed",
+      data:user
+
+    });
+
+
+  } catch(error) {
+
+    res.status(500).json({
+
+      success:false,
+      message:error.message
+
+    });
+
+  }
+
+};
+
 module.exports = {
-  getDashboard
+  getDashboard,
+  updateOnboarding
 };
