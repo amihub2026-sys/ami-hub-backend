@@ -47,5 +47,5 @@ app.use("/api/posts", postRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/reports", reportRoutes);
 app.use("/api/blocks", blockRoutes);
-app.use("/api/upload", uploadRoutes);
+app.use("/api/uploads", uploadRoutes);
 module.exports = app;
