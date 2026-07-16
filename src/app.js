@@ -17,6 +17,7 @@ const subcategoryRoutes = require("./routes/subcategory.routes");
 const postRoutes = require("./routes/post.routes");
 const reportRoutes = require("./routes/report.routes");
 const blockRoutes = require("./routes/block.routes");
+const uploadRoutes = require("./routes/upload.routes");
 
 const path = require("path");
 
@@ -46,5 +47,5 @@ app.use("/api/posts", postRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/reports", reportRoutes);
 app.use("/api/blocks", blockRoutes);
-
+app.use("/api/upload", uploadRoutes);
 module.exports = app;

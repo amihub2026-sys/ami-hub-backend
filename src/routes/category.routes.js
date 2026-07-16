@@ -1,12 +1,42 @@
-const express = require("express");
-const router = express.Router();
+const express=require("express");
 
-const categoryController = require("../controllers/category.controller");
-const protect = require("../middlewares/auth.middleware");
+const router=express.Router();
 
-router.post("/", protect, categoryController.createCategory);
-router.get("/", categoryController.getCategories);
-router.put("/:id", protect, categoryController.updateCategory);
-router.delete("/:id", protect, categoryController.deleteCategory);
+const controller=require("../controllers/category.controller");
 
-module.exports = router;
+
+const protect=require("../middlewares/auth.middleware");
+
+
+
+router.get(
+"/",
+controller.getCategories
+);
+
+
+router.post(
+"/",
+protect,
+controller.createCategory
+);
+
+
+
+router.put(
+"/:id",
+protect,
+controller.updateCategory
+);
+
+
+
+router.delete(
+"/:id",
+protect,
+controller.deleteCategory
+);
+
+
+
+module.exports=router;
