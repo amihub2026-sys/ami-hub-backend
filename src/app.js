@@ -20,16 +20,32 @@ const blockRoutes = require("./routes/block.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const subscriptionPlanRoutes =
 require("./routes/subscriptionPlan.routes");
+const boostPlanRoutes =
+require("./routes/boostPlan.routes");
 const path = require("path");
 
 const app = express();
 
 app.use(cors({
-  origin: [
-    "http://localhost:4200",
-    "https://ami-hub-node-sepia.vercel.app"
-  ],
-  credentials: true
+  origin: function (origin, callback) {
+
+    if (
+      !origin || 
+      origin.startsWith("http://localhost:")
+    ) {
+      callback(null, true);
+    } 
+    else if (
+      origin === "https://ami-hub-node-sepia.vercel.app"
+    ) {
+      callback(null, true);
+    } 
+    else {
+      callback(new Error("Not allowed by CORS"));
+    }
+
+  },
+  credentials:true
 }));
 app.use(express.json());
 
@@ -58,5 +74,9 @@ app.use("/api/uploads", uploadRoutes);
 app.use(
   "/api/subscription-plans",
   subscriptionPlanRoutes
+);
+app.use(
+"/api/boost-plans",
+boostPlanRoutes
 );
 module.exports = app;
