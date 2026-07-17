@@ -2,12 +2,10 @@ const mongoose = require("mongoose");
 
 const boostPlanSchema = new mongoose.Schema(
 {
-  boostPlanId:{
+boostPlanId:{
     type:String,
-    unique:true,
-    required:true
-  },
-
+    unique:true
+},
   boostName:{
     type:String,
     required:true

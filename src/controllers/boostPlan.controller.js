@@ -6,17 +6,33 @@ exports.createBoostPlan = async(req,res)=>{
 
 try{
 
-const plan =
-await BoostPlan.create(req.body);
+const {
+boostName,
+price,
+durationDays
+}=req.body;
 
 
-res.json({
+const plan = await BoostPlan.create({
+
+boostPlanId: "BOOST-" + Date.now(),
+
+boostName,
+price,
+durationDays
+
+});
+
+
+res.status(201).json({
 success:true,
 data:plan
 });
 
 
 }catch(err){
+
+console.log("CREATE BOOST ERROR:",err);
 
 res.status(500).json({
 success:false,
@@ -26,9 +42,6 @@ message:err.message
 }
 
 };
-
-
-
 
 // GET ALL
 
