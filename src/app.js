@@ -24,7 +24,13 @@ const path = require("path");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:4200",
+    "https://ami-hub-node-sepia.vercel.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 app.get("/", (req, res) => {
