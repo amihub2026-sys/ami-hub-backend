@@ -18,7 +18,8 @@ const postRoutes = require("./routes/post.routes");
 const reportRoutes = require("./routes/report.routes");
 const blockRoutes = require("./routes/block.routes");
 const uploadRoutes = require("./routes/upload.routes");
-
+const subscriptionPlanRoutes =
+require("./routes/subscriptionPlan.routes");
 const path = require("path");
 
 const app = express();
@@ -48,4 +49,8 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/reports", reportRoutes);
 app.use("/api/blocks", blockRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use(
+  "/api/subscription-plans",
+  subscriptionPlanRoutes
+);
 module.exports = app;
