@@ -22,6 +22,8 @@ const subscriptionPlanRoutes =
 require("./routes/subscriptionPlan.routes");
 const boostPlanRoutes =
 require("./routes/boostPlan.routes");
+const customFieldRoutes =
+require("./routes/customField.routes");
 const path = require("path");
 
 const app = express();
@@ -78,5 +80,9 @@ app.use(
 app.use(
 "/api/boost-plans",
 boostPlanRoutes
+);
+app.use(
+"/api/admin/custom-fields",
+customFieldRoutes
 );
 module.exports = app;
