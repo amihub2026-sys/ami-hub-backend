@@ -53,56 +53,49 @@ const getDashboard = async (req, res) => {
 const User = require("../models/User");
 
 
-const updateOnboarding = async (req, res) => {
+const updateOnboarding = async(req,res)=>{
 
-  try {
-
-    const user = await User.findByIdAndUpdate(
-
-      req.user._id,
-
-      {
-        usertypeid: req.body.usertypeid,
-        listingtype: req.body.listingtype || null,
-        isOnboardingCompleted: true
-      },
-
-      {
-        new: true
-      }
-
-    );
+try{
 
 
-    if (!user) {
+const user = await User.findByIdAndUpdate(
 
-      return res.status(404).json({
-        success:false,
-        message:"User not found"
-      });
+req.user._id,
 
-    }
+{
+    usertypeid:req.body.usertypeid,
+    listingtype:req.body.listingtype,
+    isOnboardingCompleted:true
+},
 
+{
+    new:true
+}
 
-    res.status(200).json({
-
-      success:true,
-      message:"Account setup completed",
-      data:user
-
-    });
+);
 
 
-  } catch(error) {
+res.status(200).json({
 
-    res.status(500).json({
+success:true,
+message:"Onboarding completed",
+data:user
 
-      success:false,
-      message:error.message
+});
 
-    });
 
-  }
+}
+catch(error){
+
+res.status(500).json({
+
+success:false,
+message:error.message
+
+});
+
+}
+
 
 };
 
