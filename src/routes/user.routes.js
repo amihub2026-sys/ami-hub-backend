@@ -4,10 +4,19 @@ const router = express.Router();
 const protect = require("../middlewares/auth.middleware");
 const userController = require("../controllers/user.controller");
 
-router.get("/dashboard", protect, userController.getDashboard);
+
+router.get(
+  "/dashboard",
+  protect,
+  userController.getDashboard
+);
+
+
 router.put(
   "/onboarding",
   protect,
   userController.updateOnboarding
 );
+
+
 module.exports = router;

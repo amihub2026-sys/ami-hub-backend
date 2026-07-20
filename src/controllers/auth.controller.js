@@ -24,25 +24,40 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
+
+    console.log("LOGIN BODY:", req.body);
+
     try {
 
         const result = await authService.loginUser(
-            req.body.mobile,
-            req.body.password
-        );
+    req.body.identifier,
+    req.body.password
+);
 
         res.status(200).json({
+
             success: true,
+
             message: "Login Successful",
-            data: result
+
+            token: result.token,
+
+            user: result.user
+
         });
+
 
     } catch (error) {
 
+
         res.status(400).json({
+
             success: false,
+
             message: error.message
+
         });
+
 
     }
 };
