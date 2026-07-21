@@ -7,51 +7,156 @@ const makeSlug = (text) =>
 // Create category
 exports.createCategory = async (req, res) => {
   try {
-    const { categoryName, type, icon, image, sortOrder, isActive } = req.body;
 
-    if (!categoryName) return res.status(400).json({ success: false, message: "Category name required" });
+    const {
+      categoryName,
+      availableIn,
+      icon,
+      image,
+      sortOrder,
+      isActive
+    } = req.body;
+
+
+    if (!categoryName) {
+      return res.status(400).json({
+        success:false,
+        message:"Category name required"
+      });
+    }
+
+
+    if (!Array.isArray(availableIn) || availableIn.length === 0) {
+      return res.status(400).json({
+        success:false,
+        message:"Available In required"
+      });
+    }
+
 
     const category = await Category.create({
+
       categoryName,
+
       slug: makeSlug(categoryName),
-      type,
-      icon,    // <- Save R2 URL from Angular
-      image,   // <- Save R2 URL from Angular
+
+      availableIn,
+
+      icon,
+      image,
+
       sortOrder,
+
       isActive,
+
       createdBy: req.user?._id || null,
+
     });
 
-    res.status(201).json({ success: true, data: category });
-  } catch (err) {
+
+    res.status(201).json({
+      success:true,
+      data:category
+    });
+
+
+  } catch(err){
+
     console.error(err);
-    res.status(500).json({ success: false, message: err.message });
+
+    res.status(500).json({
+      success:false,
+      message:err.message
+    });
+
   }
 };
 
 // Update category
+// Update category
 exports.updateCategory = async (req, res) => {
   try {
-    const { categoryName, type, icon, image, sortOrder, isActive } = req.body;
+
+    const {
+      categoryName,
+      availableIn,
+      icon,
+      image,
+      sortOrder,
+      isActive
+    } = req.body;
+
 
     const updateData = {
-      ...(categoryName && { categoryName, slug: makeSlug(categoryName) }),
-      type,
-      icon,    // <- Save updated R2 URL
-      image,   // <- Save updated R2 URL
-      sortOrder,
-      isActive,
-      updatedBy: req.user?._id || null,
+
+      ...(categoryName && {
+        categoryName,
+        slug: makeSlug(categoryName)
+      }),
+
+
+      ...(availableIn && {
+        availableIn
+      }),
+
+
+      ...(icon !== undefined && {
+        icon
+      }),
+
+
+      ...(image !== undefined && {
+        image
+      }),
+
+
+      ...(sortOrder !== undefined && {
+        sortOrder
+      }),
+
+
+      ...(isActive !== undefined && {
+        isActive
+      }),
+
+
+      updatedBy: req.user?._id || null
+
     };
 
-    const category = await Category.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
-    if (!category) return res.status(404).json({ success: false, message: "Category not found" });
+    const category = await Category.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      {
+        new:true
+      }
+    );
 
-    res.json({ success: true, data: category });
-  } catch (err) {
+
+    if (!category) {
+      return res.status(404).json({
+        success:false,
+        message:"Category not found"
+      });
+    }
+
+
+    res.json({
+      success:true,
+      data:category
+    });
+
+
+  } catch(err) {
+
     console.error(err);
-    res.status(500).json({ success: false, message: err.message });
+
+    res.status(500).json({
+      success:false,
+      message:err.message
+    });
+
   }
 };
 
