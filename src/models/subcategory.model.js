@@ -13,7 +13,11 @@ const subcategorySchema = new mongoose.Schema(
       required: true,
       trim: true
     },
-
+   availableIn: {
+  type: [String],
+  default: [],
+  required: true
+},
     slug: {
       type: String,
       required: true,

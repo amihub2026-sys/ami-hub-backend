@@ -12,15 +12,16 @@ const makeSlug = (text) => {
 
 const createSubcategory = async (req, res) => {
   try {
-    const {
-      categoryId,
-      subcategoryName,
-      icon,
-      image,
-      description,
-      sortOrder,
-      isActive
-    } = req.body;
+ const {
+  categoryId,
+  subcategoryName,
+  availableIn,
+  icon,
+  image,
+  description,
+  sortOrder,
+  isActive
+} = req.body;
 
     if (!categoryId || !subcategoryName) {
       return res.status(400).json({
@@ -28,20 +29,28 @@ const createSubcategory = async (req, res) => {
         message: "Category and subcategory name are required"
       });
     }
+    if (!Array.isArray(availableIn) || availableIn.length === 0) {
+  return res.status(400).json({
+    success:false,
+    message:"Available In required"
+  });
+}
 
     const slug = makeSlug(subcategoryName);
 
-    const subcategory = await Subcategory.create({
-      categoryId,
-      subcategoryName,
-      slug,
-      icon,
-      image,
-      description,
-      sortOrder,
-      isActive
-    });
+const subcategory = await Subcategory.create({
+  categoryId,
+  subcategoryName,
+  slug,
 
+  availableIn,
+
+  icon,
+  image,
+  description,
+  sortOrder,
+  isActive
+});
     res.status(201).json({
       success: true,
       message: "Subcategory created successfully",
@@ -81,11 +90,24 @@ const getSubcategories = async (req, res) => {
 
 const updateSubcategory = async (req, res) => {
   try {
-    const updateData = { ...req.body };
+const updateData = { ...req.body };
 
-    if (updateData.subcategoryName) {
-      updateData.slug = makeSlug(updateData.subcategoryName);
-    }
+
+if (
+  updateData.availableIn &&
+  (!Array.isArray(updateData.availableIn) ||
+   updateData.availableIn.length === 0)
+) {
+  return res.status(400).json({
+    success:false,
+    message:"Available In required"
+  });
+}
+
+
+if (updateData.subcategoryName) {
+  updateData.slug = makeSlug(updateData.subcategoryName);
+}
 
     const subcategory = await Subcategory.findByIdAndUpdate(
       req.params.id,
