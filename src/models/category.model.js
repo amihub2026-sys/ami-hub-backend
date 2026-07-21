@@ -16,12 +16,11 @@ const categorySchema = new mongoose.Schema(
       trim: true
     },
 
-    type: {
-      type: String,
-      enum: ["business", "product", "service", "job", "event", "news", "common"],
-      default: "common"
-    },
-
+availableIn: {
+  type: [String],
+  default: [],
+  required: true
+},
     icon: {
       type: String,
       default: ""
