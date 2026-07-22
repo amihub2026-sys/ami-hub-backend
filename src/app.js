@@ -24,6 +24,8 @@ const boostPlanRoutes =
 require("./routes/boostPlan.routes");
 const customFieldRoutes =
 require("./routes/customField.routes");
+const customFieldAssignmentRoutes =
+require("./routes/customFieldAssignment.routes");
 const path = require("path");
 
 const app = express();
@@ -84,5 +86,9 @@ boostPlanRoutes
 app.use(
 "/api/admin/custom-fields",
 customFieldRoutes
+);
+app.use(
+ "/api/custom-field-assignment",
+ customFieldAssignmentRoutes
 );
 module.exports = app;
