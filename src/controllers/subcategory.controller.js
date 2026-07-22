@@ -66,13 +66,21 @@ const subcategory = await Subcategory.create({
 
 const getSubcategories = async (req, res) => {
   try {
-    const filter = {};
+const filter = {};
 
-    if (req.query.categoryId) {
-      filter.categoryId = req.query.categoryId;
-    }
+if (req.query.categoryId) {
+  filter.categoryId = req.query.categoryId;
+}
 
-    const subcategories = await Subcategory.find(filter)
+
+if (req.query.type) {
+  filter.availableIn = {
+    $in: [req.query.type]
+  };
+}
+
+
+const subcategories = await Subcategory.find(filter)
       .populate("categoryId", "categoryName slug type")
       .sort({ sortOrder: 1, createdAt: -1 });
 
