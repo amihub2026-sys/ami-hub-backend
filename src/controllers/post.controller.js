@@ -1,4 +1,5 @@
 const Post = require("../models/post.model");
+const Category = require("../models/category.model");
 
 const makeSlug = (text) => {
   return text
@@ -12,7 +13,7 @@ const makeSlug = (text) => {
 
 const createPost = async (req, res) => {
   try {
-    const { title, categoryId } = req.body;
+    const { title, categoryId, listingType } = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -27,7 +28,28 @@ const createPost = async (req, res) => {
         message: "Category is required"
       });
     }
+    if (!listingType) {
+  return res.status(400).json({
+    success: false,
+    message: "Listing type is required"
+  });
+}
+const category = await Category.findById(categoryId);
 
+if (!category) {
+  return res.status(400).json({
+    success: false,
+    message: "Category not found"
+  });
+}
+
+
+if (!category.availableIn.includes(listingType)) {
+  return res.status(400).json({
+    success: false,
+    message: "This category is not available for this listing type"
+  });
+}
     const slug = `${makeSlug(title)}-${Date.now()}`;
 
     const post = await Post.create({

@@ -20,11 +20,11 @@ const postSchema = new mongoose.Schema(
       default: null
     },
 
-    listingType: {
-      type: String,
-      enum: ["business", "product", "service", "job", "event", "news", "offer", "other"],
-      default: "business"
-    },
+listingType:{
+  type:String,
+  required:true,
+  index:true
+},
 
     title: {
       type: String,

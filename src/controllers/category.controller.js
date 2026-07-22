@@ -163,11 +163,40 @@ exports.updateCategory = async (req, res) => {
 // Get all categories
 exports.getCategories = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ sortOrder: 1, createdAt: -1 });
-    res.json({ success: true, data: categories });
-  } catch (err) {
+
+    const filter = {};
+
+    if(req.query.type){
+
+      filter.availableIn = {
+        $in:[req.query.type]
+      };
+
+    }
+
+
+    const categories = await Category.find(filter)
+      .sort({
+        sortOrder:1,
+        createdAt:-1
+      });
+
+
+    res.json({
+      success:true,
+      data:categories
+    });
+
+
+  } catch(err){
+
     console.error(err);
-    res.status(500).json({ success: false, message: err.message });
+
+    res.status(500).json({
+      success:false,
+      message:err.message
+    });
+
   }
 };
 
