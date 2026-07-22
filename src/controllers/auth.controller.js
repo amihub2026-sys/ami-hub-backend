@@ -1,5 +1,9 @@
 const authService = require("../services/auth.service");
 
+const User = require("../models/User");
+
+const jwt = require("jsonwebtoken");
+
 const register = async (req, res) => {
     try {
 
@@ -98,9 +102,153 @@ const adminLogin = async (req, res) => {
   }
 };
 
-module.exports = {
-  register,
-  login,
-  getProfile,
-  adminLogin
+const otpStore = {};
+
+
+
+const sendOtp = async(req,res)=>{
+
+ try{
+
+ const {mobile}=req.body;
+
+
+ const otp =
+ Math.floor(100000 + Math.random()*900000)
+ .toString();
+
+
+ otpStore[mobile]=otp;
+
+
+ console.log(
+ "OTP:",
+ otp
+ );
+
+
+ res.json({
+
+ success:true,
+ message:"OTP Sent"
+
+ });
+
+
+ }catch(error){
+
+ res.status(400).json({
+
+ success:false,
+ message:error.message
+
+ });
+
+ }
+
+};
+
+
+
+
+
+const verifyOtp = async(req,res)=>{
+
+try{
+
+
+const {
+mobile,
+otp
+}=req.body;
+
+
+
+if(
+otpStore[mobile] !== otp
+){
+
+throw new Error(
+"Invalid OTP"
+);
+
+}
+
+
+
+let user =
+await User.findOne({
+mobile
+});
+
+
+
+if(!user){
+
+user =
+await User.create({
+
+mobile,
+
+fullName:"New User",
+
+role:"user",
+
+isActive:true,
+
+isOnboardingCompleted:false
+
+});
+
+}
+
+
+
+const token =
+jwt.sign(
+{
+id:user._id
+},
+process.env.JWT_SECRET,
+{
+expiresIn:"7d"
+}
+);
+
+
+
+res.json({
+
+success:true,
+
+token,
+
+user
+
+});
+
+
+
+}catch(error){
+
+res.status(400).json({
+
+success:false,
+
+message:error.message
+
+});
+
+}
+
+
+};
+
+module.exports={
+register,
+login,
+getProfile,
+adminLogin,
+sendOtp,
+verifyOtp
 };

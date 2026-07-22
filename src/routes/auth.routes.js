@@ -8,6 +8,17 @@ router.post("/register", authController.register);
 router.post("/login", authController.login);
 router.post("/admin-login", authController.adminLogin);
 
+router.post(
+ "/send-otp",
+ authController.sendOtp
+);
+
+
+router.post(
+ "/verify-otp",
+ authController.verifyOtp
+);
+
 
 router.get(
   "/profile",
