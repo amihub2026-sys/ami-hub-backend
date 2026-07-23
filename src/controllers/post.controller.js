@@ -401,7 +401,47 @@ const getMyPostAnalytics = async (req, res) => {
     });
   }
 };
+const getMyPosts = async (req,res)=>{
 
+  try {
+
+    const posts = await Post.find({
+      sellerId:req.user._id
+    })
+    .populate(
+      "categoryId",
+      "categoryName"
+    )
+    .populate(
+      "subcategoryId",
+      "subcategoryName"
+    )
+    .sort({
+      createdAt:-1
+    });
+
+
+    res.status(200).json({
+
+      success:true,
+      count:posts.length,
+      data:posts
+
+    });
+
+
+  } catch(error){
+
+    res.status(500).json({
+
+      success:false,
+      message:error.message
+
+    });
+
+  }
+
+};
 module.exports = {
   createPost,
   getPosts,
@@ -409,5 +449,6 @@ module.exports = {
   uploadPostMedia,
   addPostView,
   getPostAnalytics,
-  getMyPostAnalytics
+  getMyPostAnalytics,
+  getMyPosts
 };
