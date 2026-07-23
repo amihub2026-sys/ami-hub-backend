@@ -79,9 +79,11 @@ if (req.query.type) {
   };
 }
 
-
 const subcategories = await Subcategory.find(filter)
-      .populate("categoryId", "categoryName slug type")
+      .populate(
+  "categoryId",
+  "categoryName slug availableIn"
+)
       .sort({ sortOrder: 1, createdAt: -1 });
 
     res.status(200).json({
@@ -95,7 +97,42 @@ const subcategories = await Subcategory.find(filter)
     });
   }
 };
+const getSubcategoriesByCategory = async (req, res) => {
 
+  try {
+
+    const subcategories = await Subcategory.find({
+      categoryId: req.params.categoryId,
+      isActive: true
+    })
+    .sort({
+      sortOrder: 1,
+      createdAt: -1
+    });
+
+
+    res.status(200).json({
+
+      success: true,
+
+      data: subcategories
+
+    });
+
+
+  } catch(error) {
+
+    res.status(500).json({
+
+      success:false,
+
+      message:error.message
+
+    });
+
+  }
+
+};
 const updateSubcategory = async (req, res) => {
   try {
 const updateData = { ...req.body };
@@ -167,8 +204,15 @@ const deleteSubcategory = async (req, res) => {
 };
 
 module.exports = {
+
   createSubcategory,
+
   getSubcategories,
+
+  getSubcategoriesByCategory,
+
   updateSubcategory,
+
   deleteSubcategory
+
 };
