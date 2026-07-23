@@ -33,7 +33,11 @@ router.get(
   protect,
   postController.getPostAnalytics
 );
-
+router.get(
+ "/my-posts",
+ protect,
+ postController.getMyPosts
+);
 router.get("/:id", postController.getPostById);
 
 module.exports = router;
