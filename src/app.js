@@ -26,6 +26,10 @@ const customFieldRoutes =
 require("./routes/customField.routes");
 const customFieldAssignmentRoutes =
 require("./routes/customFieldAssignment.routes");
+const paymentRoutes =
+require("./routes/payment.routes");
+const subscriptionRoutes =
+require("./routes/subscription.routes");
 const path = require("path");
 
 const app = express();
@@ -90,5 +94,13 @@ customFieldRoutes
 app.use(
  "/api/custom-field-assignment",
  customFieldAssignmentRoutes
+);
+app.use(
+"/api/payment",
+paymentRoutes
+);
+app.use(
+"/api/subscriptions",
+subscriptionRoutes
 );
 module.exports = app;
