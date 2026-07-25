@@ -22,33 +22,47 @@ const createPost = async (req, res) => {
       });
     }
 
-    if (!categoryId) {
-      return res.status(400).json({
-        success: false,
-        message: "Category is required"
-      });
-    }
-    if (!listingType) {
+if (!listingType) {
   return res.status(400).json({
     success: false,
     message: "Listing type is required"
   });
 }
-const category = await Category.findById(categoryId);
 
-if (!category) {
-  return res.status(400).json({
-    success: false,
-    message: "Category not found"
-  });
-}
+/*
+  Category is required only for
+  product and service listings.
+*/
+if (
+  listingType === "product" ||
+  listingType === "service"
+) {
+  if (!categoryId) {
+    return res.status(400).json({
+      success: false,
+      message: "Category is required"
+    });
+  }
 
+  const category = await Category.findById(categoryId);
 
-if (!category.availableIn.includes(listingType)) {
-  return res.status(400).json({
-    success: false,
-    message: "This category is not available for this listing type"
-  });
+  if (!category) {
+    return res.status(400).json({
+      success: false,
+      message: "Category not found"
+    });
+  }
+
+  if (
+    !category.availableIn ||
+    !category.availableIn.includes(listingType)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "This category is not available for this listing type"
+    });
+  }
 }
     const slug = `${makeSlug(title)}-${Date.now()}`;
 

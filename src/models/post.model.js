@@ -8,11 +8,17 @@ const postSchema = new mongoose.Schema(
       required: true
     },
 
-    categoryId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      required: true
-    },
+categoryId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Category",
+  required: function () {
+    return (
+      this.listingType === "product" ||
+      this.listingType === "service"
+    );
+  },
+  default: null
+},
 
     subcategoryId: {
       type: mongoose.Schema.Types.ObjectId,
