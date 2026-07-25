@@ -33,11 +33,40 @@ router.get(
   protect,
   postController.getPostAnalytics
 );
+
 router.get(
- "/my-posts",
- protect,
- postController.getMyPosts
+  "/my-posts",
+  protect,
+  postController.getMyPosts
 );
+
+// ================= ADMIN POSTS =================
+
+router.get(
+  "/admin/all",
+  protect,
+  postController.getAdminPosts
+);
+
+router.patch(
+  "/admin/:id/status",
+  protect,
+  postController.updateAdminPostStatus
+);
+
+router.patch(
+  "/admin/:id/featured",
+  protect,
+  postController.updateAdminPostFeatured
+);
+
+router.delete(
+  "/admin/:id",
+  protect,
+  postController.deleteAdminPost
+);
+
+// Keep this dynamic route at the bottom
 router.get("/:id", postController.getPostById);
 
 module.exports = router;
