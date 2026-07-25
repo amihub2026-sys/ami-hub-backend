@@ -578,10 +578,62 @@ const deleteAdminPost = async (req, res) => {
     });
   }
 };
+const updatePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      });
+    }
+
+    const allowedFields = [
+      "title",
+      "description",
+      "price",
+      "categoryId",
+      "subcategoryId",
+      "listingType",
+      "location",
+      "customFields",
+      "images",
+      "videos",
+      "isFeatured",
+      "featuredPlanId",
+      "featuredPlanName",
+      "status",
+      "isActive"
+    ];
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        post[field] = req.body[field];
+      }
+    });
+
+    await post.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Post updated successfully",
+      data: post
+    });
+  } catch (error) {
+    console.error("Update post error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
 module.exports = {
   createPost,
   getPosts,
   getPostById,
+  updatePost,
   uploadPostMedia,
   addPostView,
   getPostAnalytics,

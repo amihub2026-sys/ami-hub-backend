@@ -5,42 +5,43 @@ const router = express.Router();
 const controller =
 require("../controllers/boostPlan.controller");
 
-
 const auth =
 require("../middlewares/auth.middleware");
 
 
-
 router.post(
-"/",
-auth,
-controller.createBoostPlan
+  "/",
+  auth,
+  controller.createBoostPlan
 );
-
 
 
 router.get(
-"/",
-auth,
-controller.getBoostPlans
+  "/",
+  auth,
+  controller.getBoostPlans
 );
 
+
+router.post(
+  "/purchase",
+  auth,
+  controller.purchaseBoostPlan
+);
 
 
 router.put(
-"/:id",
-auth,
-controller.updateBoostPlan
+  "/:id",
+  auth,
+  controller.updateBoostPlan
 );
-
 
 
 router.delete(
-"/:id",
-auth,
-controller.deleteBoostPlan
+  "/:id",
+  auth,
+  controller.deleteBoostPlan
 );
-
 
 
 module.exports = router;
