@@ -456,6 +456,128 @@ const getMyPosts = async (req,res)=>{
   }
 
 };
+const getAdminPosts = async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .populate("sellerId", "fullName mobile email username")
+      .populate("categoryId", "categoryName")
+      .populate("subcategoryId", "subcategoryName")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: posts.length,
+      data: posts
+    });
+  } catch (error) {
+    console.error("Get admin posts error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const updateAdminPostStatus = async (req, res) => {
+  try {
+    const { isActive } = req.body;
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      });
+    }
+
+    post.status = isActive ? "approved" : "rejected";
+
+    await post.save();
+
+    return res.status(200).json({
+      success: true,
+      message: isActive
+        ? "Post enabled successfully"
+        : "Post disabled successfully",
+      data: post
+    });
+  } catch (error) {
+    console.error("Update admin post status error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const updateAdminPostFeatured = async (req, res) => {
+  try {
+    const { isFeatured } = req.body;
+
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      {
+        isFeatured: Boolean(isFeatured)
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: post.isFeatured
+        ? "Post marked as featured"
+        : "Post removed from featured",
+      data: post
+    });
+  } catch (error) {
+    console.error("Update featured status error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const deleteAdminPost = async (req, res) => {
+  try {
+    const post = await Post.findByIdAndDelete(
+      req.params.id
+    );
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Post deleted successfully"
+    });
+  } catch (error) {
+    console.error("Delete admin post error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
 module.exports = {
   createPost,
   getPosts,
@@ -464,5 +586,9 @@ module.exports = {
   addPostView,
   getPostAnalytics,
   getMyPostAnalytics,
-  getMyPosts
+  getMyPosts,
+  getAdminPosts,
+  updateAdminPostStatus,
+  updateAdminPostFeatured,
+  deleteAdminPost
 };
