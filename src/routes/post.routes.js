@@ -66,6 +66,12 @@ router.delete(
   postController.deleteAdminPost
 );
 
+router.put(
+  "/:id",
+  protect,
+  postController.updatePost
+);
+
 // Keep this dynamic route at the bottom
 router.get("/:id", postController.getPostById);
 
