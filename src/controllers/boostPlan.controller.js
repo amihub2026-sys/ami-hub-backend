@@ -1,7 +1,6 @@
 const BoostPlan = require("../models/boostPlan.model");
 const Post = require("../models/post.model");
-
-
+const UserBoostPlan = require("../models/userBoostPlan.model");
 // CREATE
 exports.createBoostPlan = async (req, res) => {
   try {
@@ -52,7 +51,28 @@ exports.getBoostPlans = async (req, res) => {
     });
   }
 };
+// GET USER BOOST PURCHASES
+exports.getUserBoostPlans = async (req, res) => {
+  try {
+const plans = await UserBoostPlan.find()
+  .populate("userId", "fullName mobile email")
+  .populate("postId", "title listingType")
+  .populate("boostPlanId", "boostName price durationDays")
+  .sort({ createdAt: -1 });
 
+    return res.json({
+      success: true,
+      data: plans
+    });
+  } catch (err) {
+    console.log("GET USER BOOST PLANS ERROR:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
 
 // PURCHASE BOOST PLAN
 exports.purchaseBoostPlan = async (req, res) => {
@@ -113,6 +133,17 @@ exports.purchaseBoostPlan = async (req, res) => {
     post.featuredEndDate = endDate;
 
     await post.save();
+
+await UserBoostPlan.create({
+  userId: post.sellerId,
+  postId: post._id,
+  boostPlanId: plan._id,
+  amount: plan.price,
+  paymentStatus: "paid",
+  startDate,
+  endDate,
+  isActive: true
+});
 
     return res.status(200).json({
       success: true,

@@ -22,13 +22,17 @@ router.get(
   controller.getBoostPlans
 );
 
+router.get(
+  "/user-purchases",
+  auth,
+  controller.getUserBoostPlans
+);
 
 router.post(
   "/purchase",
   auth,
   controller.purchaseBoostPlan
 );
-
 
 router.put(
   "/:id",

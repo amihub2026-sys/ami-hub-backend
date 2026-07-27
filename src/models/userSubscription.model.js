@@ -1,68 +1,90 @@
-const mongoose=require("mongoose");
+const mongoose = require("mongoose");
 
+const userSubscriptionSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
 
-const userSubscriptionSchema=new mongoose.Schema(
-{
+    postId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Post",
+      required: true,
+      unique: true
+    },
 
- userId:{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"User",
-    required:true
- },
+    planId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubscriptionPlan",
+      required: true
+    },
 
+    amountPaid: {
+      type: Number,
+      required: true,
+      min: 0
+    },
 
- planId:{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"SubscriptionPlan",
-    required:true
- },
+    currency: {
+      type: String,
+      default: "INR"
+    },
 
+    razorpayOrderId: {
+      type: String,
+      required: true
+    },
 
- startDate:{
-    type:Date,
-    default:Date.now
- },
+    razorpayPaymentId: {
+      type: String,
+      required: true,
+      unique: true
+    },
 
+    razorpaySignature: {
+      type: String,
+      required: true
+    },
 
- expiryDate:{
-    type:Date,
-    required:true
- },
+    paymentStatus: {
+      type: String,
+      enum: [
+        "pending",
+        "paid",
+        "failed",
+        "refunded"
+      ],
+      default: "pending"
+    },
 
+    startDate: {
+      type: Date,
+      default: Date.now
+    },
 
- remainingPosts:{
-    type:Number,
-    default:0
- },
+    expiryDate: {
+      type: Date,
+      required: true
+    },
 
-
- remainingAds:{
-    type:Number,
-    default:0
- },
-
-
- status:{
-    type:String,
-    enum:[
+    status: {
+      type: String,
+      enum: [
         "active",
         "expired",
         "cancelled"
-    ],
-    default:"active"
- }
-
-
-},
-{
- timestamps:true
-}
-
+      ],
+      default: "active"
+    }
+  },
+  {
+    timestamps: true
+  }
 );
 
-
-module.exports =
-mongoose.model(
-"UserSubscription",
-userSubscriptionSchema
+module.exports = mongoose.model(
+  "UserSubscription",
+  userSubscriptionSchema
 );

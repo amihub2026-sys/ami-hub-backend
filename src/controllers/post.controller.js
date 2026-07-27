@@ -66,17 +66,19 @@ if (
 }
     const slug = `${makeSlug(title)}-${Date.now()}`;
 
-    const post = await Post.create({
-      ...req.body,
-      slug,
-      sellerId: req.user._id
-    });
+const post = await Post.create({
+  ...req.body,
+  slug,
+  sellerId: req.user._id,
 
-    res.status(201).json({
-      success: true,
-      message: "Post created successfully",
-      data: post
-    });
+  status: "pending_payment"
+});
+
+res.status(201).json({
+  success: true,
+  message: "Post saved successfully. Please complete payment to publish your post.",
+  data: post
+});
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
