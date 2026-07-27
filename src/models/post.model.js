@@ -137,12 +137,37 @@ listingType:{
       type: Boolean,
       default: false
     },
+featuredPlanId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "BoostPlan",
+  default: null
+},
 
-    status: {
-      type: String,
-      enum: ["pending", "approved", "rejected", "expired"],
-      default: "pending"
-    },
+featuredPlanName: {
+  type: String,
+  default: ""
+},
+
+featuredStartDate: {
+  type: Date,
+  default: null
+},
+
+featuredEndDate: {
+  type: Date,
+  default: null
+},
+status: {
+  type: String,
+  enum: [
+    "pending_payment",
+    "pending",
+    "approved",
+    "rejected",
+    "expired"
+  ],
+  default: "pending_payment"
+},
 
     expiryDate: {
       type: Date,
