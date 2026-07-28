@@ -98,40 +98,35 @@ const subcategories = await Subcategory.find(filter)
   }
 };
 const getSubcategoriesByCategory = async (req, res) => {
-
   try {
-
-    const subcategories = await Subcategory.find({
+    const filter = {
       categoryId: req.params.categoryId,
       isActive: true
-    })
-    .sort({
-      sortOrder: 1,
-      createdAt: -1
-    });
+    };
 
+    if (req.query.type) {
+      filter.availableIn = {
+        $in: [req.query.type]
+      };
+    }
+
+    const subcategories = await Subcategory.find(filter)
+      .sort({
+        sortOrder: 1,
+        createdAt: -1
+      });
 
     res.status(200).json({
-
       success: true,
-
       data: subcategories
-
     });
 
-
-  } catch(error) {
-
+  } catch (error) {
     res.status(500).json({
-
-      success:false,
-
-      message:error.message
-
+      success: false,
+      message: error.message
     });
-
   }
-
 };
 const updateSubcategory = async (req, res) => {
   try {
