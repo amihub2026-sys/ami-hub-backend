@@ -1,5 +1,5 @@
 const Profile = require("../models/Profile");
-
+const User = require("../models/User");
 const createProfile = async (req,res)=>{
 
 try{
@@ -11,20 +11,9 @@ userId:req.user._id,
 
 fullName:req.body.fullName,
 
-businessName:req.body.businessName || "",
-
 mobile:req.body.mobile,
 
 email:req.body.email,
-
-
-accountType:req.body.accountType || "",
-
-category:req.body.category || "",
-
-city:req.body.city || "",
-
-address:req.body.address || "",
 
 profileImage:req.body.profileImage || null,
 
@@ -32,14 +21,16 @@ kycImage:req.body.kycImage || null,
 
 qrCodeImage:req.body.qrCodeImage || null,
 
-rating:req.body.rating || 4,
-
-verified:req.body.verified || false,
-
 termsAccepted:req.body.termsAccepted || false
 
 });
-
+await User.findByIdAndUpdate(
+  req.user._id,
+  {
+    isSeller: true,
+    isOnboardingCompleted: true
+  }
+);
 
 res.status(201).json({
 
@@ -96,14 +87,15 @@ const updateMyProfile = async (req, res) => {
   try {
     const profile = await Profile.findOneAndUpdate(
       { userId: req.user._id },
-      {
-        fullName: req.body.fullName,
-        businessName: req.body.businessName,
-        mobile: req.body.mobile,
-        email: req.body.email,
-        city: req.body.city,
-        address: req.body.address
-      },
+{
+  fullName: req.body.fullName,
+  mobile: req.body.mobile,
+  email: req.body.email,
+  profileImage: req.body.profileImage,
+  kycImage: req.body.kycImage,
+  qrCodeImage: req.body.qrCodeImage,
+  termsAccepted: req.body.termsAccepted
+},
       { new: true }
     );
 

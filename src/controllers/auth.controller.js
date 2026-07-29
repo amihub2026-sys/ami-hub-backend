@@ -108,11 +108,15 @@ const otpStore = {};
 
 const sendOtp = async(req,res)=>{
 
+console.log("🔥 SEND OTP FUNCTION CALLED");
+
+
+
  try{
 
  const {mobile}=req.body;
 
-
+console.log("SEND OTP REQUEST:", mobile);
  const otp =
  Math.floor(100000 + Math.random()*900000)
  .toString();
@@ -174,15 +178,17 @@ throw new Error(
 
 }
 
-
-
 let user =
 await User.findOne({
 mobile
+}).sort({
+updatedAt: -1
 });
 
-
-
+console.log(
+"USER FROM OTP:",
+user
+);
 if(!user){
 
 user =
@@ -193,6 +199,8 @@ mobile,
 fullName:"New User",
 
 role:"user",
+
+isSeller:false,
 
 isActive:true,
 
