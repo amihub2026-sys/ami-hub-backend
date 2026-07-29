@@ -461,7 +461,7 @@ const getMyPosts = async (req,res)=>{
 const getAdminPosts = async (req, res) => {
   try {
     const posts = await Post.find()
-      .populate("sellerId", "fullName mobile email username")
+      .populate("sellerId", "fullName mobile email")
       .populate("categoryId", "categoryName")
       .populate("subcategoryId", "subcategoryName")
       .sort({ createdAt: -1 });

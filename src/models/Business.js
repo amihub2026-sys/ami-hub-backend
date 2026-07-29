@@ -2,15 +2,28 @@ const mongoose = require("mongoose");
 
 const businessSchema = new mongoose.Schema(
   {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
-    },
+userId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User"
+},
 
-    title: {
-      type: String,
-      required: true
-    },
+isVerifiedSeller: {
+  type: Boolean,
+  default: false
+},
+
+kycImage: {
+  type: String
+},
+
+qrCodeImage: {
+  type: String
+},
+
+title: {
+  type: String,
+  required: true
+},
 
     description: {
       type: String

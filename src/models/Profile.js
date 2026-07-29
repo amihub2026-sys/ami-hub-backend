@@ -18,12 +18,6 @@ const profileSchema = new mongoose.Schema(
     },
 
 
-    businessName: {
-        type: String,
-        default: ""
-    },
-
-
     mobile: {
         type: String,
         required: true
@@ -35,29 +29,6 @@ const profileSchema = new mongoose.Schema(
         default: ""
     },
 
-
-    accountType: {
-        type: String,
-        default: ""
-    },
-
-
-    category: {
-        type: String,
-        default: ""
-    },
-
-
-    city: {
-        type: String,
-        default: ""
-    },
-
-
-    address: {
-        type: String,
-        default: ""
-    },
 
 
     profileImage: {
@@ -76,19 +47,6 @@ const profileSchema = new mongoose.Schema(
         type: String,
         default: null
     },
-
-
-    rating: {
-        type: Number,
-        default: 4
-    },
-
-
-    verified: {
-        type: Boolean,
-        default: false
-    },
-
 
     termsAccepted: {
         type: Boolean,

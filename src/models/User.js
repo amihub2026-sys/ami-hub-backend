@@ -20,53 +20,35 @@ const userSchema = new mongoose.Schema(
         lowercase: true
     },
 
-    password: {
-        type: String,
-        required: true
-    },
-
-
-    username: {
-        type: String,
-        unique: true,
-        sparse: true
-    },
-
-
     role: {
         type: String,
         enum: ["user", "admin"],
         default: "user"
     },
 
+    isSeller: {
+        type: Boolean,
+        default: false
+    },
 
     isActive: {
         type: Boolean,
         default: true
     },
 
-
     isOnboardingCompleted: {
         type: Boolean,
         default: false
     },
 
-
     usertypeid: {
         type: Number,
         default: 1
-    },
-
-
-    listingtype: {
-        type: String,
-        enum: ["product", "service", null],
-        default: null
     }
 
 },
 {
-    timestamps: true
+    timestamps:true
 }
 );
 
