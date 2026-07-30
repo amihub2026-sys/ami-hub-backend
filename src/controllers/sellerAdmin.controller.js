@@ -69,9 +69,8 @@ userId:sellerId
 
 // seller posts
 const posts = await Post.find({
-userId:sellerId
+sellerId:sellerId
 });
-
 
 // seller history
 const history = await SellerHistory.find({
