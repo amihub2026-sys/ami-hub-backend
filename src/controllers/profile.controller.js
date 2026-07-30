@@ -1,5 +1,6 @@
 const Profile = require("../models/Profile");
 const User = require("../models/User");
+const SellerHistory = require("../models/SellerHistory");
 const createProfile = async (req,res)=>{
 
 try{
@@ -24,14 +25,38 @@ qrCodeImage:req.body.qrCodeImage || null,
 termsAccepted:req.body.termsAccepted || false
 
 });
-await User.findByIdAndUpdate(
+const updatedUser = await User.findByIdAndUpdate(
   req.user._id,
   {
     isSeller: true,
+    sellerStatus: "seller",
+    sellerSince: new Date(),
     isOnboardingCompleted: true
+  },
+  {
+    new:true
   }
 );
 
+
+console.log("UPDATED USER:", updatedUser);
+const existingHistory = await SellerHistory.findOne({
+  userId:req.user._id,
+  action:"became_seller"
+});
+
+
+if(!existingHistory){
+
+await SellerHistory.create({
+
+  userId:req.user._id,
+
+  action:"became_seller"
+
+});
+
+}
 res.status(201).json({
 
 success:true,

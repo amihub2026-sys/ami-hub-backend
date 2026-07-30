@@ -30,6 +30,7 @@ const paymentRoutes =
 require("./routes/payment.routes");
 const subscriptionRoutes =
 require("./routes/subscription.routes");
+const sellerAdminRoutes = require("./routes/sellerAdmin.routes");
 const path = require("path");
 
 const app = express();
@@ -68,6 +69,7 @@ app.use("/api/favorites", favoriteRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/enquiries", enquiryRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin",sellerAdminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/chats", chatRoutes);

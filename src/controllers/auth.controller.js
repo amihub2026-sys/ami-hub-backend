@@ -83,22 +83,35 @@ const getProfile = async (req, res) => {
 };
 
 const adminLogin = async (req, res) => {
+
+  console.log("🔥 ADMIN LOGIN API HIT");
+
+  console.log("REQUEST BODY:", req.body);
+
   try {
+
     const result = await authService.adminLogin(
-      req.body.email,
+      req.body.username,
       req.body.password
     );
 
+    console.log("LOGIN SUCCESS");
+
     res.status(200).json({
-      success: true,
-      message: "Admin Login Successful",
-      data: result
+      success:true,
+      message:"Admin Login Successful",
+      data:result
     });
-  } catch (error) {
+
+  } catch(error) {
+
+    console.log("ADMIN LOGIN ERROR:", error.message);
+
     res.status(400).json({
-      success: false,
-      message: error.message
+      success:false,
+      message:error.message
     });
+
   }
 };
 

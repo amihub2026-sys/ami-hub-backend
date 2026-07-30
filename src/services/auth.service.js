@@ -90,30 +90,66 @@ const loginUser = async (identifier, password) => {
     };
 };
 
-const adminLogin = async (email, password) => {
-  const admin = await User.findOne({
-    email,
-    role: "admin",
-    isActive: true
+const adminLogin = async (username, password) => {
+
+  console.log("USERNAME RECEIVED:", username);
+
+  const allAdmins = await User.find({
+    role:"admin"
   });
+
+  console.log("ADMIN USERS FROM BACKEND DB:", allAdmins);
+
+
+  const admin = await User.findOne({
+    username: username,
+    role:"admin",
+    isActive:true
+  });
+
+
+  console.log("FOUND ADMIN:", admin);
+
 
   if (!admin) {
     throw new Error("Admin not found");
   }
 
-  if (admin.password !== password) {
+
+console.log("DB PASSWORD:", admin.password);
+console.log("ENTERED PASSWORD:", password);
+console.log(
+  "PASSWORD TYPE DB:",
+  typeof admin.password
+);
+console.log(
+  "PASSWORD TYPE INPUT:",
+  typeof password
+);
+
+
+if(admin.password.trim() !== password.trim()){
     throw new Error("Invalid admin password");
-  }
+}
 
   const token = jwt.sign(
-    { id: admin._id, role: "admin" },
+    {
+      id: admin._id,
+      role:"admin"
+    },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    {
+      expiresIn:"7d"
+    }
   );
 
-  return { token, admin };
-};
 
+  return {
+    token,
+    admin
+  };
+
+};
 module.exports = {
   registerUser,
   loginUser,

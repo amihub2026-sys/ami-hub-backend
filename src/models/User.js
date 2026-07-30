@@ -19,7 +19,15 @@ const userSchema = new mongoose.Schema(
         trim: true,
         lowercase: true
     },
-
+username: {
+    type: String,
+    sparse: true,
+    trim: true
+},
+password: {
+    type: String,
+    required: false
+},
     role: {
         type: String,
         enum: ["user", "admin"],
@@ -30,7 +38,19 @@ const userSchema = new mongoose.Schema(
         type: Boolean,
         default: false
     },
+sellerSince: {
+    type: Date,
+    default: null
+},
 
+sellerStatus: {
+    type: String,
+    enum: [
+        "user",
+        "seller"
+    ],
+    default: "user"
+},
     isActive: {
         type: Boolean,
         default: true
