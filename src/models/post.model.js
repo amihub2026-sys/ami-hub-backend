@@ -174,10 +174,30 @@ status: {
       default: null
     },
 
-    customFields: {
-      type: Object,
-      default: {}
+customFields: {
+  type: Object,
+  default: {}
+},
+
+
+catalog: [
+  {
+    title:{
+      type:String,
+      default:""
+    },
+
+    price:{
+      type:Number,
+      default:0
+    },
+
+    image:{
+      type:String,
+      default:""
     }
+  }
+]
   },
   {
     timestamps: true
