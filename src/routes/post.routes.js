@@ -71,7 +71,10 @@ router.put(
   protect,
   postController.updatePost
 );
-
+router.get(
+  "/seller/:sellerId",
+  postController.getSellerPosts
+);
 // Keep this dynamic route at the bottom
 router.get("/:id", postController.getPostById);
 
