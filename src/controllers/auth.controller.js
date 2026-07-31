@@ -209,7 +209,7 @@ await User.create({
 
 mobile,
 
-fullName:"New User",
+fullName:"",
 
 role:"user",
 
@@ -222,9 +222,6 @@ isOnboardingCompleted:false
 });
 
 }
-
-
-
 const token =
 jwt.sign(
 {

@@ -28,16 +28,20 @@ termsAccepted:req.body.termsAccepted || false
 const updatedUser = await User.findByIdAndUpdate(
   req.user._id,
   {
+    fullName: req.body.fullName,
+    mobile: req.body.mobile,
+    email: req.body.email,
+
     isSeller: true,
     sellerStatus: "seller",
     sellerSince: new Date(),
     isOnboardingCompleted: true
   },
   {
-    new:true
+    new: true,
+    runValidators: true
   }
 );
-
 
 console.log("UPDATED USER:", updatedUser);
 const existingHistory = await SellerHistory.findOne({
@@ -96,10 +100,31 @@ const getMyProfile = async (req, res) => {
       });
     }
 
+    const user = await User.findById(req.user._id)
+      .select("fullName mobile email");
+
     res.status(200).json({
       success: true,
-      data: profile
+      data: {
+        ...profile.toObject(),
+
+        fullName:
+          user?.fullName ||
+          profile.fullName ||
+          "",
+
+        mobile:
+          user?.mobile ||
+          profile.mobile ||
+          "",
+
+        email:
+          user?.email ||
+          profile.email ||
+          ""
+      }
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -107,7 +132,6 @@ const getMyProfile = async (req, res) => {
     });
   }
 };
-
 const updateMyProfile = async (req, res) => {
   try {
     const profile = await Profile.findOneAndUpdate(
@@ -130,6 +154,18 @@ const updateMyProfile = async (req, res) => {
         message: "Profile not found"
       });
     }
+    const updatedUser = await User.findByIdAndUpdate(
+  req.user._id,
+  {
+    fullName: req.body.fullName,
+    mobile: req.body.mobile,
+    email: req.body.email
+  },
+  {
+    new: true,
+    runValidators: true
+  }
+);
 
     res.status(200).json({
       success: true,
