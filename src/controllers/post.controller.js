@@ -631,18 +631,83 @@ const updatePost = async (req, res) => {
     });
   }
 };
+const getSellerPosts = async (req,res)=>{
+
+  try{
+
+    const posts = await Post.find({
+      sellerId:req.params.sellerId
+    })
+.populate(
+ "sellerId",
+ "fullName mobile email image"
+)
+    .populate(
+      "categoryId",
+      "categoryName"
+    )
+    .populate(
+      "subcategoryId",
+      "subcategoryName"
+    )
+    .sort({
+      createdAt:-1
+    });
+
+
+    res.status(200).json({
+
+      success:true,
+
+      count:posts.length,
+
+      data:posts
+
+    });
+
+
+  }
+  catch(error){
+
+    res.status(500).json({
+
+      success:false,
+
+      message:error.message
+
+    });
+
+  }
+
+};
 module.exports = {
+
   createPost,
+
   getPosts,
+
   getPostById,
-  updatePost,
-  uploadPostMedia,
-  addPostView,
-  getPostAnalytics,
+
+  getSellerPosts,
+
   getMyPostAnalytics,
+
+  getPostAnalytics,
+
   getMyPosts,
+
   getAdminPosts,
+
   updateAdminPostStatus,
+
   updateAdminPostFeatured,
-  deleteAdminPost
+
+  deleteAdminPost,
+
+  updatePost,
+
+  uploadPostMedia,
+
+  addPostView
+
 };
