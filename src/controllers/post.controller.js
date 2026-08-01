@@ -1,6 +1,6 @@
 const Post = require("../models/post.model");
 const Category = require("../models/category.model");
-
+const mongoose = require("mongoose");
 const makeSlug = (text) => {
   return text
     .toString()
@@ -111,14 +111,34 @@ const getPosts = async (req, res) => {
     }
 
     // Category
-    if (categoryId) {
-      filter.categoryId = categoryId;
-    }
+// Category
+if (categoryId) {
+
+  if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid category ID"
+    });
+  }
+
+  filter.categoryId =
+    new mongoose.Types.ObjectId(categoryId);
+}
 
     // Sub Category
-    if (subcategoryId) {
-      filter.subcategoryId = subcategoryId;
-    }
+// Sub Category
+if (subcategoryId) {
+
+  if (!mongoose.Types.ObjectId.isValid(subcategoryId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid subcategory ID"
+    });
+  }
+
+  filter.subcategoryId =
+    new mongoose.Types.ObjectId(subcategoryId);
+}
 
     // Product / Service
     if (listingType) {
