@@ -4,18 +4,52 @@ const router = express.Router();
 const protect = require("../middlewares/auth.middleware");
 const adminController = require("../controllers/admin.controller");
 
-router.get("/dashboard", protect, adminController.getDashboard);
-router.get("/users", protect, adminController.getAllUsers);
+router.get(
+  "/dashboard",
+  protect,
+  adminController.getDashboard
+);
 
-router.put("/users/:id/status", protect, adminController.updateUserStatus);
+router.get(
+  "/users",
+  protect,
+  adminController.getAllUsers
+);
 
-router.get("/posts", protect, adminController.getAllPosts);
-router.get("/reports", protect, adminController.getAllReports);
+router.patch(
+  "/users/:id/status",
+  protect,
+  adminController.updateUserStatus
+);
 
-router.put("/posts/:id/approve", protect, adminController.approvePost);
+router.get(
+  "/posts",
+  protect,
+  adminController.getAllPosts
+);
 
-router.put("/posts/:id/reject", protect, adminController.rejectPost);
+router.get(
+  "/reports",
+  protect,
+  adminController.getAllReports
+);
 
-router.delete("/posts/:id", protect, adminController.deletePost);
+router.put(
+  "/posts/:id/approve",
+  protect,
+  adminController.approvePost
+);
+
+router.put(
+  "/posts/:id/reject",
+  protect,
+  adminController.rejectPost
+);
+
+router.delete(
+  "/posts/:id",
+  protect,
+  adminController.deletePost
+);
 
 module.exports = router;
