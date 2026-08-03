@@ -54,7 +54,9 @@ const getDashboard = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
+    const users = await User.find()
+  .select("-password")
+  .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -211,11 +213,23 @@ const deletePost = async (req, res) => {
 
 const updateUserStatus = async (req, res) => {
   try {
+    if (typeof req.body.isActive !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "isActive must be true or false"
+      });
+    }
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { isActive: req.body.isActive },
-      { new: true }
-    );
+      {
+        isActive: req.body.isActive
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    ).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -224,13 +238,18 @@ const updateUserStatus = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "User status updated",
+      message: req.body.isActive
+        ? "User activated successfully"
+        : "User blocked successfully",
       data: user
     });
+
   } catch (error) {
-    res.status(500).json({
+    console.error("UPDATE USER STATUS ERROR:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message
     });

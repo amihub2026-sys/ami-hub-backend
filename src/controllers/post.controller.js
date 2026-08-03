@@ -1,5 +1,6 @@
 const Post = require("../models/post.model");
 const Category = require("../models/category.model");
+const UserSubscription = require("../models/userSubscription.model");
 const mongoose = require("mongoose");
 const makeSlug = (text) => {
   return text
@@ -68,15 +69,23 @@ if (
 
 const post = await Post.create({
   ...req.body,
+
   slug,
+
   sellerId: req.user._id,
 
-  status: "pending_payment"
+  // Payment is already covered by the subscription.
+  // The post can now wait for admin approval.
+  status: "pending"
 });
-
-res.status(201).json({
+return res.status(201).json({
   success: true,
-  message: "Post saved successfully. Please complete payment to publish your post.",
+
+  requiresPayment: false,
+
+  message:
+    "Post created successfully and sent for admin approval.",
+
   data: post
 });
   } catch (error) {

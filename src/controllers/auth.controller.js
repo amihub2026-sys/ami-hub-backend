@@ -247,15 +247,17 @@ user
 
 
 
-}catch(error){
+} catch (error) {
 
-res.status(400).json({
+  console.error(
+    "VERIFY OTP ERROR:",
+    error
+  );
 
-success:false,
-
-message:error.message
-
-});
+  return res.status(400).json({
+    success: false,
+    message: error.message
+  });
 
 }
 
