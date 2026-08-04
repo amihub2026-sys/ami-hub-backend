@@ -65,6 +65,33 @@ if (
     });
   }
 }
+const now = new Date();
+
+const subscription = await UserSubscription.findOne({
+  userId: req.user._id,
+  status: "active",
+  expiryDate: { $gte: now }
+}).sort({
+  createdAt: -1
+});
+
+if (!subscription) {
+  return res.status(402).json({
+    success: false,
+    requiresPayment: true,
+    message:
+      "You don't have an active subscription."
+  });
+}
+
+if (subscription.remainingPosts <= 0) {
+  return res.status(402).json({
+    success: false,
+    requiresPayment: true,
+    message:
+      "Your post limit has been reached. Please purchase another plan."
+  });
+}
     const slug = `${makeSlug(title)}-${Date.now()}`;
 
 const post = await Post.create({
@@ -78,6 +105,13 @@ const post = await Post.create({
   // The post can now wait for admin approval.
   status: "pending"
 });
+subscription.remainingPosts =
+  Math.max(
+    0,
+    Number(subscription.remainingPosts || 0) - 1
+  );
+
+await subscription.save();
 return res.status(201).json({
   success: true,
 

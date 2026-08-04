@@ -5,14 +5,8 @@ const userSubscriptionSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
-    },
-
-    postId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Post",
       required: true,
-      unique: true
+      index: true
     },
 
     planId: {
@@ -23,7 +17,7 @@ const userSubscriptionSchema = new mongoose.Schema(
 
     amountPaid: {
       type: Number,
-      required: true,
+      default: 0,
       min: 0
     },
 
@@ -34,18 +28,17 @@ const userSubscriptionSchema = new mongoose.Schema(
 
     razorpayOrderId: {
       type: String,
-      required: true
+      default: null
     },
 
     razorpayPaymentId: {
       type: String,
-      required: true,
-      unique: true
+      default: null
     },
 
     razorpaySignature: {
       type: String,
-      required: true
+      default: null
     },
 
     paymentStatus: {
@@ -56,7 +49,7 @@ const userSubscriptionSchema = new mongoose.Schema(
         "failed",
         "refunded"
       ],
-      default: "pending"
+      default: "paid"
     },
 
     startDate: {
@@ -67,6 +60,18 @@ const userSubscriptionSchema = new mongoose.Schema(
     expiryDate: {
       type: Date,
       required: true
+    },
+
+    remainingPosts: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
+    remainingAds: {
+      type: Number,
+      default: 0,
+      min: 0
     },
 
     status: {
