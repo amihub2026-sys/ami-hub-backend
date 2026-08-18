@@ -643,6 +643,41 @@ const deleteAdminPost = async (req, res) => {
     });
   }
 };
+const deleteMyPost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      });
+    }
+
+    // Security: seller can delete only their own post
+    if (post.sellerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to delete this post"
+      });
+    }
+
+    await Post.findByIdAndDelete(req.params.id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Post deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Delete my post error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
 const updatePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -766,6 +801,7 @@ module.exports = {
   updateAdminPostFeatured,
 
   deleteAdminPost,
+    deleteMyPost,
 
   updatePost,
 

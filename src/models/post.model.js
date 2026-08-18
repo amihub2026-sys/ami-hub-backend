@@ -101,7 +101,7 @@ listingType:{
       youtube: { type: String, default: "" }
     },
 
-    ratingAverage: {
+    ratingAverage: {      
       type: Number,
       default: 0
     },

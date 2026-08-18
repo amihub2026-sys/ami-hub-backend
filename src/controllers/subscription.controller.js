@@ -20,7 +20,13 @@ const populateSubscription = (query) => {
 exports.createSubscription = async (req, res) => {
   try {
     const userId = req.user?._id;
-    const { planId } = req.body;
+    const {
+  planId,
+  razorpayOrderId,
+  razorpayPaymentId,
+  razorpaySignature,
+  amountPaid
+} = req.body;
 
     if (!userId) {
       return res.status(401).json({

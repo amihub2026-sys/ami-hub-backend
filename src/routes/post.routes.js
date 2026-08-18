@@ -65,7 +65,11 @@ router.delete(
   protect,
   postController.deleteAdminPost
 );
-
+router.delete(
+  "/:id",
+  protect,
+  postController.deleteMyPost
+);
 router.put(
   "/:id",
   protect,
