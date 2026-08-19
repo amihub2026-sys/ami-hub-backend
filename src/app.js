@@ -18,6 +18,8 @@ const postRoutes = require("./routes/post.routes");
 const reportRoutes = require("./routes/report.routes");
 const blockRoutes = require("./routes/block.routes");
 const uploadRoutes = require("./routes/upload.routes");
+const heroSliderRoutes =
+  require("./routes/heroSlider.routes");
 const subscriptionPlanRoutes =
 require("./routes/subscriptionPlan.routes");
 const boostPlanRoutes =
@@ -104,5 +106,9 @@ paymentRoutes
 app.use(
 "/api/subscriptions",
 subscriptionRoutes
+);
+app.use(
+  "/api/hero-slider",
+  heroSliderRoutes
 );
 module.exports = app;
