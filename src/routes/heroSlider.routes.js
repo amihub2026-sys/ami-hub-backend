@@ -1,5 +1,4 @@
 const express = require("express");
-
 const router = express.Router();
 
 const upload =
@@ -7,20 +6,6 @@ const upload =
 
 const heroSliderController =
   require("../controllers/heroSlider.controller");
-
-router.get(
-  "/",
-  heroSliderController.getHeroSliders
-);
-
-
-const router = express.Router();
-
-const heroSliderController =
-  require("../controllers/heroSlider.controller");
-
-const upload =
-  require("../middlewares/upload.middleware");
 
 
 // ==============================
@@ -32,24 +17,15 @@ router.post(
   upload.fields([
     {
       name: "desktopImage",
-<
-      maxCount: 1
-    },
-    {
-      name: "mobileImage",
-      maxCount: 1
-    }
       maxCount: 1,
     },
     {
       name: "mobileImage",
       maxCount: 1,
     },
-
   ]),
   heroSliderController.createHeroSlider
 );
-
 
 
 // ==============================
@@ -58,7 +34,7 @@ router.post(
 
 router.get(
   "/admin",
-  heroSliderController.getAllHeroSliders
+  heroSliderController.getHeroSliders
 );
 
 
@@ -75,7 +51,6 @@ router.get(
 // ==============================
 // DELETE
 // ==============================
-
 
 router.delete(
   "/:id",
