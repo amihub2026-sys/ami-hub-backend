@@ -6,7 +6,8 @@ const {
 
 require("dotenv").config();
 
-const HeroSlider = require("../models/heroSlider.model");
+const HeroSlider =
+  require("../models/heroSlider.model");
 
 
 // ======================================
@@ -32,7 +33,7 @@ const s3 = new S3Client({
 
 
 // ======================================
-// HELPER - UPLOAD IMAGE TO R2
+// HELPER - UPLOAD FILE TO R2
 // ======================================
 
 async function uploadFileToR2(
@@ -51,6 +52,7 @@ async function uploadFileToR2(
 
   const command =
     new PutObjectCommand({
+
       Bucket:
         process.env.R2_BUCKET,
 
@@ -62,8 +64,8 @@ async function uploadFileToR2(
 
       ContentType:
         file.mimetype,
-    });
 
+    });
 
   await s3.send(command);
 
@@ -109,7 +111,8 @@ exports.getHeroSliders = async (
 
       success: true,
 
-      data: sliders,
+      data:
+        sliders,
 
     });
 
@@ -140,7 +143,7 @@ exports.getHeroSliders = async (
 
 
 // ======================================
-// GET ACTIVE HERO SLIDERS - HOME PAGE
+// GET ACTIVE HERO SLIDERS - HOME
 // ======================================
 
 exports.getActiveHeroSliders = async (
@@ -165,7 +168,8 @@ exports.getActiveHeroSliders = async (
 
       success: true,
 
-      data: sliders,
+      data:
+        sliders,
 
     });
 
@@ -197,6 +201,7 @@ exports.getActiveHeroSliders = async (
 
 // ======================================
 // CREATE HERO SLIDER
+// MULTIPLE BANNERS ALLOWED
 // ======================================
 
 exports.createHeroSlider = async (
@@ -205,17 +210,6 @@ exports.createHeroSlider = async (
 ) => {
 
   try {
-
-    console.log(
-      "HERO FILES:",
-      req.files
-    );
-
-    console.log(
-      "HERO BODY:",
-      req.body
-    );
-
 
     const desktopImage =
       req.files?.desktopImage?.[0];
@@ -256,7 +250,9 @@ exports.createHeroSlider = async (
     }
 
 
-    // Upload desktop banner to Cloudflare R2
+    // ======================================
+    // 1. UPLOAD DESKTOP IMAGE TO R2
+    // ======================================
 
     const desktopUpload =
       await uploadFileToR2(
@@ -265,7 +261,9 @@ exports.createHeroSlider = async (
       );
 
 
-    // Upload mobile banner to Cloudflare R2
+    // ======================================
+    // 2. UPLOAD MOBILE IMAGE TO R2
+    // ======================================
 
     const mobileUpload =
       await uploadFileToR2(
@@ -274,7 +272,10 @@ exports.createHeroSlider = async (
       );
 
 
-    // Save URLs + R2 keys in MongoDB
+    // ======================================
+    // 3. SAVE NEW BANNER IN MONGODB
+    // OLD BANNERS ARE NOT DELETED
+    // ======================================
 
     const slider =
       await HeroSlider.create({
@@ -303,6 +304,10 @@ exports.createHeroSlider = async (
 
       });
 
+
+    // ======================================
+    // 4. RETURN RESPONSE
+    // ======================================
 
     return res
       .status(201)
@@ -345,7 +350,7 @@ exports.createHeroSlider = async (
 
 
 // ======================================
-// DELETE HERO SLIDER
+// DELETE SINGLE HERO SLIDER
 // ======================================
 
 exports.deleteHeroSlider = async (
@@ -377,49 +382,81 @@ exports.deleteHeroSlider = async (
     }
 
 
-    // Delete desktop image from R2
+    // ======================================
+    // DELETE DESKTOP IMAGE FROM R2
+    // ======================================
 
-    if (slider.desktopKey) {
+    if (
+      slider.desktopKey
+    ) {
 
-      await s3.send(
+      try {
 
-        new DeleteObjectCommand({
+        await s3.send(
 
-          Bucket:
-            process.env.R2_BUCKET,
+          new DeleteObjectCommand({
 
-          Key:
-            slider.desktopKey,
+            Bucket:
+              process.env.R2_BUCKET,
 
-        })
+            Key:
+              slider.desktopKey,
 
-      );
+          })
 
-    }
+        );
 
+      } catch (error) {
 
-    // Delete mobile image from R2
+        console.error(
+          "Desktop image delete error:",
+          error
+        );
 
-    if (slider.mobileKey) {
-
-      await s3.send(
-
-        new DeleteObjectCommand({
-
-          Bucket:
-            process.env.R2_BUCKET,
-
-          Key:
-            slider.mobileKey,
-
-        })
-
-      );
+      }
 
     }
 
 
-    // Delete MongoDB record
+    // ======================================
+    // DELETE MOBILE IMAGE FROM R2
+    // ======================================
+
+    if (
+      slider.mobileKey
+    ) {
+
+      try {
+
+        await s3.send(
+
+          new DeleteObjectCommand({
+
+            Bucket:
+              process.env.R2_BUCKET,
+
+            Key:
+              slider.mobileKey,
+
+          })
+
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Mobile image delete error:",
+          error
+        );
+
+      }
+
+    }
+
+
+    // ======================================
+    // DELETE ONLY THIS MONGODB RECORD
+    // ======================================
 
     await HeroSlider.findByIdAndDelete(
       req.params.id
