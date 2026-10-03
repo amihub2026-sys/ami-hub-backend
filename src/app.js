@@ -18,6 +18,8 @@ const postRoutes = require("./routes/post.routes");
 const reportRoutes = require("./routes/report.routes");
 const blockRoutes = require("./routes/block.routes");
 const uploadRoutes = require("./routes/upload.routes");
+const heroSliderRoutes =
+  require("./routes/heroSlider.routes");
 const subscriptionPlanRoutes =
 require("./routes/subscriptionPlan.routes");
 const boostPlanRoutes =
@@ -78,6 +80,10 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/subcategories", subcategoryRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use(
+  "/api/hero-slider",
+  heroSliderRoutes
+);
 app.use("/api/reports", reportRoutes);
 app.use("/api/blocks", blockRoutes);
 app.use("/api/uploads", uploadRoutes);
