@@ -15,6 +15,16 @@ const s3 = new S3Client({
   endpoint:
     `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
 
+const HeroSlider = require("../models/heroSlider.model");
+
+require("dotenv").config();
+
+const s3 = new S3Client({
+  region: "auto",
+
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+
+
   forcePathStyle: true,
 
   credentials: {
@@ -41,9 +51,27 @@ async function uploadFileToR2(
       /[^a-zA-Z0-9._-]/g,
       "-"
     );
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+});
+
+
+// ==============================
+// HELPER - UPLOAD FILE TO R2
+// ==============================
+
+const uploadFileToR2 = async (file, folder) => {
+
+  const safeFileName = file.originalname.replace(
+    /[^a-zA-Z0-9._-]/g,
+    "-"
+  );
+
 
   const fileName =
     `${folder}/${Date.now()}-${safeFileName}`;
+
 
   const command =
     new PutObjectCommand({
@@ -131,6 +159,37 @@ exports.createHeroSlider = async (
     );
 
 
+=======
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET,
+
+    Key: fileName,
+
+    Body: file.buffer,
+
+    ContentType: file.mimetype,
+  });
+
+  await s3.send(command);
+
+  const publicUrl =
+    `${process.env.R2_PUBLIC_URL}/${fileName}`;
+
+  return {
+    publicUrl,
+    fileName,
+  };
+};
+
+
+// ==============================
+// UPLOAD HERO SLIDER
+// ==============================
+
+exports.createHeroSlider = async (req, res) => {
+
+  try {
+
     const desktopImage =
       req.files?.desktopImage?.[0];
 
@@ -148,10 +207,16 @@ exports.createHeroSlider = async (
             "Desktop image is required",
         });
 
+      return res.status(400).json({
+        success: false,
+        message: "Desktop image is required",
+      });
+
     }
 
 
     if (!mobileImage) {
+
 
       return res
         .status(400)
@@ -165,6 +230,15 @@ exports.createHeroSlider = async (
 
 
     // Upload Desktop Image
+
+      return res.status(400).json({
+        success: false,
+        message: "Mobile image is required",
+      });
+
+    }
+
+
 
     const desktopUpload =
       await uploadFileToR2(
@@ -221,9 +295,42 @@ exports.createHeroSlider = async (
       });
 
 
+    const heroSlider =
+      await HeroSlider.create({
+
+        desktopImageUrl:
+          desktopUpload.publicUrl,
+
+        mobileImageUrl:
+          mobileUpload.publicUrl,
+
+        displayOrder:
+          Number(req.body.displayOrder) || 0,
+
+        active:
+          req.body.active === "false"
+            ? false
+            : true,
+
+      });
+
+
+    return res.status(201).json({
+
+      success: true,
+
+      message:
+        "Hero slider uploaded successfully",
+
+      data: heroSlider,
+
+    });
+
+
   } catch (error) {
 
     console.error(
+
       "Create hero slider error:",
       error
     );
@@ -245,6 +352,124 @@ exports.createHeroSlider = async (
 // DELETE HERO SLIDER
 // ===============================
 
+      "Create Hero Slider Error:",
+      error
+    );
+
+    return res.status(500).json({
+
+      success: false,
+
+      message: error.message,
+
+    });
+
+  }
+
+};
+
+
+// ==============================
+// GET ALL HERO SLIDERS - ADMIN
+// ==============================
+
+exports.getAllHeroSliders = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const heroSliders =
+      await HeroSlider
+        .find()
+        .sort({
+          displayOrder: 1,
+          createdAt: -1,
+        });
+
+
+    return res.json({
+
+      success: true,
+
+      data: heroSliders,
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Get Hero Sliders Error:",
+      error
+    );
+
+    return res.status(500).json({
+
+      success: false,
+
+      message: error.message,
+
+    });
+
+  }
+
+};
+
+
+// ==============================
+// GET ACTIVE HERO SLIDERS - HOME
+// ==============================
+
+exports.getActiveHeroSliders = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const heroSliders =
+      await HeroSlider
+        .find({
+          active: true,
+        })
+        .sort({
+          displayOrder: 1,
+        });
+
+
+    return res.json({
+
+      success: true,
+
+      data: heroSliders,
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Get Active Hero Sliders Error:",
+      error
+    );
+
+    return res.status(500).json({
+
+      success: false,
+
+      message: error.message,
+
+    });
+
+  }
+
+};
+
+
+// ==============================
+// DELETE HERO SLIDER
+// ==============================
+
 exports.deleteHeroSlider = async (
   req,
   res
@@ -252,10 +477,15 @@ exports.deleteHeroSlider = async (
 
   try {
 
+
     const slider =
+
+    const heroSlider =
+
       await HeroSlider.findById(
         req.params.id
       );
+
 
 
     if (!slider) {
@@ -307,21 +537,87 @@ exports.deleteHeroSlider = async (
 
     // Delete record from MongoDB
 
+    if (!heroSlider) {
+
+      return res.status(404).json({
+
+        success: false,
+
+        message:
+          "Hero slider not found",
+
+      });
+
+    }
+
+
+    const deleteFromR2 =
+      async (publicUrl) => {
+
+        if (!publicUrl) return;
+
+        const baseUrl =
+          process.env.R2_PUBLIC_URL
+            .replace(/\/$/, "");
+
+        const key =
+          publicUrl.replace(
+            `${baseUrl}/`,
+            ""
+          );
+
+
+        const command =
+          new DeleteObjectCommand({
+
+            Bucket:
+              process.env.R2_BUCKET,
+
+            Key: key,
+
+          });
+
+
+        await s3.send(command);
+
+      };
+
+
+    await deleteFromR2(
+      heroSlider.desktopImageUrl
+    );
+
+    await deleteFromR2(
+      heroSlider.mobileImageUrl
+    );
+
+
     await HeroSlider.findByIdAndDelete(
       req.params.id
     );
 
 
     return res.json({
+
       success: true,
       message:
         "Hero banner deleted successfully",
     });
 
 
+
+      success: true,
+
+      message:
+        "Hero slider deleted successfully",
+
+    });
+
+
   } catch (error) {
 
     console.error(
+
       "Delete hero slider error:",
       error
     );
@@ -336,4 +632,19 @@ exports.deleteHeroSlider = async (
       });
 
   }
+
+      "Delete Hero Slider Error:",
+      error
+    );
+
+    return res.status(500).json({
+
+      success: false,
+
+      message: error.message,
+
+    });
+
+  }
+
 };

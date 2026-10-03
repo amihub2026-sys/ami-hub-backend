@@ -111,4 +111,8 @@ app.use(
 "/api/subscriptions",
 subscriptionRoutes
 );
+app.use(
+  "/api/hero-slider",
+  heroSliderRoutes
+);
 module.exports = app;
