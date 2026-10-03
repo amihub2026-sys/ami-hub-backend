@@ -2,6 +2,25 @@ const mongoose = require("mongoose");
 
 const heroSliderSchema = new mongoose.Schema(
   {
+
+    desktopImage: {
+      type: String,
+      required: true,
+    },
+
+    desktopKey: {
+      type: String,
+      required: true,
+    },
+
+    mobileImage: {
+      type: String,
+      required: true,
+    },
+
+    mobileKey: {
+      type: String,
+      required: true,
     desktopImageUrl: {
       type: String,
       required: true,
@@ -12,6 +31,7 @@ const heroSliderSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+
     },
 
     displayOrder: {
