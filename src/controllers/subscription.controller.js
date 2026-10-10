@@ -1,32 +1,78 @@
+
 const mongoose = require("mongoose");
 
 const UserSubscription = require("../models/userSubscription.model");
 const SubscriptionPlan = require("../models/subscriptionPlan.model");
 const User = require("../models/User");
 
+// ======================================================
+// HELPERS
+// ======================================================
+
 const populateSubscription = (query) => {
   return query
-    .populate("userId", "fullName username mobile email role isActive")
+    .populate(
+      "userId",
+      "fullName username mobile email role isActive"
+    )
     .populate(
       "planId",
-      "planName planId price validity postLimit adLimit videoEnabled isActive"
+      "planName planId price duration validity postLimit adLimit videoEnabled isActive"
     );
 };
 
+const getValidityDays = (plan) => {
+  const days = Number(
+    plan.duration ?? plan.validity ?? 30
+  );
+
+  if (!Number.isInteger(days) || days < 1) {
+    throw new Error("Invalid subscription validity");
+  }
+
+  return days;
+};
+
+const getExpiryDate = (startDate, days) => {
+  const expiryDate = new Date(startDate);
+
+  expiryDate.setUTCDate(
+    expiryDate.getUTCDate() + days
+  );
+
+  return expiryDate;
+};
+
+const isSubscriptionValid = (subscription) => {
+  return (
+    subscription &&
+    subscription.status === "active" &&
+    new Date(subscription.expiryDate).getTime() > Date.now()
+  );
+};
+
+const isValidObjectId = (value) => {
+  return mongoose.Types.ObjectId.isValid(value);
+};
+
+const sendError = (res, error, fallback) => {
+  console.error(fallback, error);
+
+  return res.status(500).json({
+    success: false,
+    message: error.message || fallback
+  });
+};
+
 // ======================================================
-// USER SELECTS PLAN FOR THEMSELVES
+// 1. USER SELECTS A FREE SUBSCRIPTION PLAN
 // POST /api/subscriptions/create
 // ======================================================
+
 exports.createSubscription = async (req, res) => {
   try {
     const userId = req.user?._id;
-    const {
-  planId,
-  razorpayOrderId,
-  razorpayPaymentId,
-  razorpaySignature,
-  amountPaid
-} = req.body;
+    const { planId } = req.body;
 
     if (!userId) {
       return res.status(401).json({
@@ -35,17 +81,10 @@ exports.createSubscription = async (req, res) => {
       });
     }
 
-    if (!planId) {
+    if (!planId || !isValidObjectId(planId)) {
       return res.status(400).json({
         success: false,
-        message: "Subscription plan ID is required"
-      });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(planId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid subscription plan ID"
+        message: "Valid subscription plan ID is required"
       });
     }
 
@@ -65,59 +104,101 @@ exports.createSubscription = async (req, res) => {
       });
     }
 
-    const startDate = new Date();
+    // Paid subscriptions must be activated by a separate
+    // server-side verified Razorpay payment process.
+    if (Number(plan.price) > 0) {
+      return res.status(403).json({
+        success: false,
+        requiresPayment: true,
+        message:
+          "Paid plans require verified Razorpay payment."
+      });
+    }
 
-    const expiryDate = new Date(startDate);
-    expiryDate.setDate(
-      expiryDate.getDate() + Number(plan.validity || 0)
-    );
-
-    // Expire previous active subscription
-    await UserSubscription.updateMany(
-      {
+    const existingValidSubscription =
+      await UserSubscription.findOne({
         userId,
-        status: "active"
-      },
-      {
-        $set: {
-          status: "expired"
-        }
-      }
+        status: "active",
+        expiryDate: { $gt: new Date() }
+      }).sort({ createdAt: -1 });
+
+    // Reuse an existing valid subscription.
+    // Do not reset the user's remaining post allowance.
+    if (existingValidSubscription) {
+      const populated = await populateSubscription(
+        UserSubscription.findById(existingValidSubscription._id)
+      );
+
+      return res.status(200).json({
+        success: true,
+        alreadyActive: true,
+        message: "An active subscription already exists",
+        data: populated
+      });
+    }
+
+    // Protect against repeated free-plan activation,
+    // which could give users unlimited free posts.
+    const previousSubscription =
+      await UserSubscription.findOne({
+        userId
+      }).sort({ createdAt: -1 });
+
+    if (previousSubscription) {
+      return res.status(409).json({
+        success: false,
+        requiresRenewal: true,
+        message:
+          "Your previous subscription is expired or inactive. Please renew through an administrator."
+      });
+    }
+
+    const validityDays = getValidityDays(plan);
+
+    const startDate = new Date();
+    const expiryDate = getExpiryDate(
+      startDate,
+      validityDays
     );
 
-    const subscription = await UserSubscription.create({
-      userId,
-      planId: plan._id,
-      startDate,
-      expiryDate,
-      remainingPosts: Number(plan.postLimit || 0),
-      remainingAds: Number(plan.adLimit || 0),
-      status: "active"
-    });
+    const subscription =
+      await UserSubscription.create({
+        userId,
+        planId: plan._id,
+        amountPaid: 0,
+        currency: "INR",
+        paymentStatus: "paid",
+        startDate,
+        expiryDate,
+        remainingPosts: Number(plan.postLimit || 0),
+        remainingAds: Number(plan.adLimit || 0),
+        status: "active"
+      });
 
-    const populatedSubscription = await populateSubscription(
+    const populated = await populateSubscription(
       UserSubscription.findById(subscription._id)
     );
 
     return res.status(201).json({
       success: true,
-      message: "Subscription created successfully",
-      data: populatedSubscription
+      message: "Free subscription activated successfully",
+      data: populated
     });
-  } catch (error) {
-    console.error("CREATE SUBSCRIPTION ERROR:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to create subscription"
-    });
+  } catch (error) {
+    return sendError(
+      res,
+      error,
+      "CREATE SUBSCRIPTION ERROR"
+    );
   }
 };
 
 // ======================================================
-// ADMIN ASSIGNS PLAN TO A SELECTED USER
+// 2. ADMIN ASSIGNS A SUBSCRIPTION TO A USER
 // POST /api/subscriptions/admin-create
 // ======================================================
+
 exports.adminCreateSubscription = async (req, res) => {
   try {
     if (req.user?.role !== "admin") {
@@ -129,31 +210,15 @@ exports.adminCreateSubscription = async (req, res) => {
 
     const { userId, planId } = req.body;
 
-    if (!userId) {
+    if (
+      !userId ||
+      !planId ||
+      !isValidObjectId(userId) ||
+      !isValidObjectId(planId)
+    ) {
       return res.status(400).json({
         success: false,
-        message: "User ID is required"
-      });
-    }
-
-    if (!planId) {
-      return res.status(400).json({
-        success: false,
-        message: "Subscription plan ID is required"
-      });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid user ID"
-      });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(planId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid subscription plan ID"
+        message: "Valid user ID and plan ID are required"
       });
     }
 
@@ -182,14 +247,17 @@ exports.adminCreateSubscription = async (req, res) => {
       });
     }
 
-    const startDate = new Date();
+    const validityDays = getValidityDays(plan);
 
-    const expiryDate = new Date(startDate);
-    expiryDate.setDate(
-      expiryDate.getDate() + Number(plan.validity || 0)
+    const startDate = new Date();
+    const expiryDate = getExpiryDate(
+      startDate,
+      validityDays
     );
 
-    // Expire selected user's previous active subscription
+    // Admin-authorized plan assignment.
+    // Existing subscription records remain in MongoDB,
+    // but their previous active status is closed.
     await UserSubscription.updateMany(
       {
         userId,
@@ -202,39 +270,46 @@ exports.adminCreateSubscription = async (req, res) => {
       }
     );
 
-    const subscription = await UserSubscription.create({
-      userId,
-      planId: plan._id,
-      startDate,
-      expiryDate,
-      remainingPosts: Number(plan.postLimit || 0),
-      remainingAds: Number(plan.adLimit || 0),
-      status: "active"
-    });
+    const subscription =
+      await UserSubscription.create({
+        userId,
+        planId: plan._id,
+        amountPaid: 0,
+        currency: "INR",
+        paymentStatus: Number(plan.price) > 0
+          ? "pending"
+          : "paid",
+        startDate,
+        expiryDate,
+        remainingPosts: Number(plan.postLimit || 0),
+        remainingAds: Number(plan.adLimit || 0),
+        status: "active"
+      });
 
-    const populatedSubscription = await populateSubscription(
+    const populated = await populateSubscription(
       UserSubscription.findById(subscription._id)
     );
 
     return res.status(201).json({
       success: true,
       message: "Subscription assigned successfully",
-      data: populatedSubscription
+      data: populated
     });
-  } catch (error) {
-    console.error("ADMIN CREATE SUBSCRIPTION ERROR:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to assign subscription"
-    });
+  } catch (error) {
+    return sendError(
+      res,
+      error,
+      "ADMIN CREATE SUBSCRIPTION ERROR"
+    );
   }
 };
 
 // ======================================================
-// GET ALL USER SUBSCRIPTIONS
+// 3. GET ALL USER SUBSCRIPTIONS (ADMIN)
 // GET /api/subscriptions
 // ======================================================
+
 exports.getAllSubscriptions = async (req, res) => {
   try {
     if (req.user?.role !== "admin") {
@@ -245,7 +320,8 @@ exports.getAllSubscriptions = async (req, res) => {
     }
 
     const subscriptions = await populateSubscription(
-      UserSubscription.find().sort({ createdAt: -1 })
+      UserSubscription.find()
+        .sort({ createdAt: -1 })
     );
 
     return res.status(200).json({
@@ -253,27 +329,42 @@ exports.getAllSubscriptions = async (req, res) => {
       count: subscriptions.length,
       data: subscriptions
     });
-  } catch (error) {
-    console.error("GET SUBSCRIPTIONS ERROR:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to load subscriptions"
-    });
+  } catch (error) {
+    return sendError(
+      res,
+      error,
+      "GET SUBSCRIPTIONS ERROR"
+    );
   }
 };
 
 // ======================================================
-// GET LOGGED-IN USER SUBSCRIPTION
+// 4. GET LOGGED-IN USER'S SUBSCRIPTION
 // GET /api/subscriptions/my-subscription
 // ======================================================
+
 exports.getMySubscription = async (req, res) => {
   try {
-    const subscription = await populateSubscription(
-      UserSubscription.findOne({
+    if (!req.user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: "User authentication required"
+      });
+    }
+
+    // Prefer the latest genuinely active subscription.
+    let subscription = await UserSubscription.findOne({
+      userId: req.user._id,
+      status: "active",
+      expiryDate: { $gt: new Date() }
+    }).sort({ createdAt: -1 });
+
+    if (!subscription) {
+      subscription = await UserSubscription.findOne({
         userId: req.user._id
-      }).sort({ createdAt: -1 })
-    );
+      }).sort({ createdAt: -1 });
+    }
 
     if (!subscription) {
       return res.status(404).json({
@@ -284,30 +375,35 @@ exports.getMySubscription = async (req, res) => {
 
     if (
       subscription.status === "active" &&
-      new Date(subscription.expiryDate) < new Date()
+      new Date(subscription.expiryDate) <= new Date()
     ) {
       subscription.status = "expired";
       await subscription.save();
     }
 
+    const populated = await populateSubscription(
+      UserSubscription.findById(subscription._id)
+    );
+
     return res.status(200).json({
       success: true,
-      data: subscription
+      data: populated
     });
-  } catch (error) {
-    console.error("GET MY SUBSCRIPTION ERROR:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to load subscription"
-    });
+  } catch (error) {
+    return sendError(
+      res,
+      error,
+      "GET MY SUBSCRIPTION ERROR"
+    );
   }
 };
 
 // ======================================================
-// ADMIN UPDATE SUBSCRIPTION
+// 5. ADMIN UPDATES SUBSCRIPTION DETAILS
 // PUT /api/subscriptions/:id
 // ======================================================
+
 exports.updateSubscription = async (req, res) => {
   try {
     if (req.user?.role !== "admin") {
@@ -319,14 +415,15 @@ exports.updateSubscription = async (req, res) => {
 
     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isValidObjectId(id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid subscription ID"
       });
     }
 
-    const subscription = await UserSubscription.findById(id);
+    const subscription =
+      await UserSubscription.findById(id);
 
     if (!subscription) {
       return res.status(404).json({
@@ -344,41 +441,63 @@ exports.updateSubscription = async (req, res) => {
     } = req.body;
 
     if (startDate !== undefined) {
-      const parsedStartDate = new Date(startDate);
+      const date = new Date(startDate);
 
-      if (isNaN(parsedStartDate.getTime())) {
+      if (Number.isNaN(date.getTime())) {
         return res.status(400).json({
           success: false,
           message: "Invalid start date"
         });
       }
 
-      subscription.startDate = parsedStartDate;
+      subscription.startDate = date;
     }
 
     if (expiryDate !== undefined) {
-      const parsedExpiryDate = new Date(expiryDate);
+      const date = new Date(expiryDate);
 
-      if (isNaN(parsedExpiryDate.getTime())) {
+      if (Number.isNaN(date.getTime())) {
         return res.status(400).json({
           success: false,
           message: "Invalid expiry date"
         });
       }
 
-      subscription.expiryDate = parsedExpiryDate;
+      subscription.expiryDate = date;
     }
 
     if (remainingPosts !== undefined) {
-      subscription.remainingPosts = Number(remainingPosts);
+      const posts = Number(remainingPosts);
+
+      if (!Number.isInteger(posts) || posts < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Remaining posts must be zero or greater"
+        });
+      }
+
+      subscription.remainingPosts = posts;
     }
 
     if (remainingAds !== undefined) {
-      subscription.remainingAds = Number(remainingAds);
+      const ads = Number(remainingAds);
+
+      if (!Number.isInteger(ads) || ads < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Remaining ads must be zero or greater"
+        });
+      }
+
+      subscription.remainingAds = ads;
     }
 
     if (status !== undefined) {
-      const allowedStatuses = ["active", "expired", "cancelled"];
+      const allowedStatuses = [
+        "active",
+        "expired",
+        "cancelled"
+      ];
 
       if (!allowedStatuses.includes(status)) {
         return res.status(400).json({
@@ -392,29 +511,30 @@ exports.updateSubscription = async (req, res) => {
 
     await subscription.save();
 
-    const populatedSubscription = await populateSubscription(
+    const populated = await populateSubscription(
       UserSubscription.findById(subscription._id)
     );
 
     return res.status(200).json({
       success: true,
       message: "Subscription updated successfully",
-      data: populatedSubscription
+      data: populated
     });
-  } catch (error) {
-    console.error("UPDATE SUBSCRIPTION ERROR:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to update subscription"
-    });
+  } catch (error) {
+    return sendError(
+      res,
+      error,
+      "UPDATE SUBSCRIPTION ERROR"
+    );
   }
 };
 
 // ======================================================
-// ADMIN CHANGE STATUS
+// 6. ADMIN CHANGES SUBSCRIPTION STATUS
 // PATCH /api/subscriptions/:id/status
 // ======================================================
+
 exports.updateSubscriptionStatus = async (req, res) => {
   try {
     if (req.user?.role !== "admin") {
@@ -427,34 +547,36 @@ exports.updateSubscriptionStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isValidObjectId(id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid subscription ID"
       });
     }
 
-    const allowedStatuses = ["active", "expired", "cancelled"];
+    const allowedStatuses = [
+      "active",
+      "expired",
+      "cancelled"
+    ];
 
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: "Status must be active, expired, or cancelled"
+        message:
+          "Status must be active, expired, or cancelled"
       });
     }
 
-    const subscription = await UserSubscription.findByIdAndUpdate(
-      id,
-      {
-        $set: {
-          status
+    const subscription =
+      await UserSubscription.findByIdAndUpdate(
+        id,
+        { $set: { status } },
+        {
+          new: true,
+          runValidators: true
         }
-      },
-      {
-        new: true,
-        runValidators: true
-      }
-    );
+      );
 
     if (!subscription) {
       return res.status(404).json({
@@ -463,29 +585,30 @@ exports.updateSubscriptionStatus = async (req, res) => {
       });
     }
 
-    const populatedSubscription = await populateSubscription(
+    const populated = await populateSubscription(
       UserSubscription.findById(subscription._id)
     );
 
     return res.status(200).json({
       success: true,
       message: "Subscription status updated successfully",
-      data: populatedSubscription
+      data: populated
     });
-  } catch (error) {
-    console.error("UPDATE SUBSCRIPTION STATUS ERROR:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to update subscription status"
-    });
+  } catch (error) {
+    return sendError(
+      res,
+      error,
+      "UPDATE SUBSCRIPTION STATUS ERROR"
+    );
   }
 };
 
 // ======================================================
-// ADMIN DELETE SUBSCRIPTION
+// 7. ADMIN DELETES SUBSCRIPTION
 // DELETE /api/subscriptions/:id
 // ======================================================
+
 exports.deleteSubscription = async (req, res) => {
   try {
     if (req.user?.role !== "admin") {
@@ -497,14 +620,15 @@ exports.deleteSubscription = async (req, res) => {
 
     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!isValidObjectId(id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid subscription ID"
       });
     }
 
-    const subscription = await UserSubscription.findByIdAndDelete(id);
+    const subscription =
+      await UserSubscription.findByIdAndDelete(id);
 
     if (!subscription) {
       return res.status(404).json({
@@ -517,12 +641,12 @@ exports.deleteSubscription = async (req, res) => {
       success: true,
       message: "Subscription deleted successfully"
     });
-  } catch (error) {
-    console.error("DELETE SUBSCRIPTION ERROR:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to delete subscription"
-    });
+  } catch (error) {
+    return sendError(
+      res,
+      error,
+      "DELETE SUBSCRIPTION ERROR"
+    );
   }
 };
