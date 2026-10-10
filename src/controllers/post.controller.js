@@ -71,18 +71,19 @@ const subscription = await UserSubscription.findOne({
   userId: req.user._id,
   status: "active",
   expiryDate: { $gte: now }
-}).sort({
-  createdAt: -1
-});
+}).sort({ createdAt: -1 });
 
 if (!subscription) {
   return res.status(402).json({
     success: false,
-    requiresPayment: true,
+    requiresSubscription: true,
+    requiresPayment: false,
+    code: "NO_ACTIVE_SUBSCRIPTION",
     message:
-      "You don't have an active subscription."
+      "Please activate your selected subscription plan before posting."
   });
 }
+
 
 if (subscription.remainingPosts <= 0) {
   return res.status(402).json({
