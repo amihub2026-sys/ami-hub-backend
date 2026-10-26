@@ -3,52 +3,81 @@ const crypto = require("crypto");
 
 const Post = require("../models/post.model");
 
+const BoostPlan = require("../models/boostPlan.model");
+const mongoose = require("mongoose");
+
 
 
 // CREATE ORDER
 
-exports.createOrder = async(req,res)=>{
+// CREATE RAZORPAY ORDER
+exports.createOrder = async (req, res) => {
+  try {
+    const { planId } = req.body;
 
-try{
+    if (!planId || typeof planId !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Plan ID is required"
+      });
+    }
 
-const { amount } = req.body;
+    // Support MongoDB _id and custom boostPlanId
+    const query = mongoose.isValidObjectId(planId)
+      ? {
+          $or: [
+            { _id: planId },
+            { boostPlanId: planId }
+          ]
+        }
+      : { boostPlanId: planId };
 
+    const plan = await BoostPlan.findOne({
+      ...query,
+      isActive: true
+    });
 
-const order =
-await razorpay.orders.create({
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        message: "Active boost plan not found"
+      });
+    }
 
-amount: amount * 100,
+    const amount = Number(plan.price);
 
-currency:"INR",
+    if (!Number.isFinite(amount) || amount < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid boost plan price"
+      });
+    }
 
-receipt:
-"ami_hub_"+Date.now()
+    const order = await razorpay.orders.create({
+      amount: Math.round(amount * 100),
+      currency: "INR",
+      receipt: "ami_hub_" + Date.now()
+    });
 
-});
+    console.log("Razorpay order created:", order.id);
 
+    return res.json({
+      success: true,
+      order
+    });
 
-res.json({
+  } catch (error) {
+    console.error("RAZORPAY CREATE ORDER ERROR:", {
+      message: error.message,
+      statusCode: error.statusCode,
+      description: error.error?.description
+    });
 
-success:true,
-
-order
-
-});
-
-
-}
-catch(error){
-
-res.status(500).json({
-
-success:false,
-
-message:error.message
-
-});
-
-}
-
+    return res.status(500).json({
+      success: false,
+      message: "Unable to create Razorpay order"
+    });
+  }
 };
 
 
