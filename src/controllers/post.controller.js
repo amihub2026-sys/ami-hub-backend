@@ -2,6 +2,7 @@ const Post = require("../models/post.model");
 const Category = require("../models/category.model");
 const UserSubscription = require("../models/userSubscription.model");
 const mongoose = require("mongoose");
+const UserBoostPlan = require("../models/userBoostPlan.model");
 const makeSlug = (text) => {
   return text
     .toString()
@@ -220,10 +221,27 @@ if (subcategoryId) {
 
     }
 
-    // Featured
+
+    
+    // FEATURED ADS - ONLY VALID PAID BOOSTS
     if (isFeatured === "true") {
-      filter.isFeatured = true;
+      const now = new Date();
+
+      const activePostIds = await UserBoostPlan.distinct("postId", {
+        paymentStatus: "paid",
+        isActive: true,
+        startDate: { $lte: now },
+        endDate: { $gt: now },
+        postId: { $ne: null }
+      });
+
+      filter._id = {
+        $in: activePostIds
+      };
+
+      filter.status = "approved";
     }
+
 
     let query = Post.find(filter)
       .populate("sellerId", "fullName mobile email")
