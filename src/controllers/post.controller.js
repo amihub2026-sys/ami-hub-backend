@@ -3,6 +3,7 @@ const Category = require("../models/category.model");
 const UserSubscription = require("../models/userSubscription.model");
 const mongoose = require("mongoose");
 const UserBoostPlan = require("../models/userBoostPlan.model");
+const User = require("../models/User");
 const makeSlug = (text) => {
   return text
     .toString()
@@ -17,6 +18,39 @@ const createPost = async (req, res) => {
   try {
     const { title, categoryId, listingType } = req.body;
 
+    let sellerId = req.user._id;
+    let isAdminPosting = false;
+
+    if (req.user.role === "admin" && req.body.sellerId) {
+      if (req.user.isActive === false) {
+        return res.status(403).json({
+          success: false,
+          message: "Admin account is blocked"
+        });
+      }
+
+      const selectedUserId = String(req.body.sellerId);
+
+      if (!/^[a-f\d]{24}$/i.test(selectedUserId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid selected user ID"
+        });
+      }
+
+      const selectedUser = await User.findById(selectedUserId);
+
+      if (!selectedUser || selectedUser.isActive === false) {
+        return res.status(400).json({
+          success: false,
+          message: "Selected user was not found or is blocked"
+        });
+      }
+
+      sellerId = selectedUser._id;
+      isAdminPosting = true;
+    }
+
     if (!title) {
       return res.status(400).json({
         success: false,
@@ -24,111 +58,98 @@ const createPost = async (req, res) => {
       });
     }
 
-if (!listingType) {
-  return res.status(400).json({
-    success: false,
-    message: "Listing type is required"
-  });
-}
+    if (!listingType) {
+      return res.status(400).json({
+        success: false,
+        message: "Listing type is required"
+      });
+    }
 
-/*
-  Category is required only for
-  product and service listings.
-*/
-if (
-  listingType === "product" ||
-  listingType === "service"
-) {
-  if (!categoryId) {
-    return res.status(400).json({
-      success: false,
-      message: "Category is required"
-    });
-  }
+    if (listingType === "product" || listingType === "service") {
+      if (!categoryId) {
+        return res.status(400).json({
+          success: false,
+          message: "Category is required"
+        });
+      }
 
-  const category = await Category.findById(categoryId);
+      const category = await Category.findById(categoryId);
 
-  if (!category) {
-    return res.status(400).json({
-      success: false,
-      message: "Category not found"
-    });
-  }
+      if (!category) {
+        return res.status(400).json({
+          success: false,
+          message: "Category not found"
+        });
+      }
 
-  if (
-    !category.availableIn ||
-    !category.availableIn.includes(listingType)
-  ) {
-    return res.status(400).json({
-      success: false,
-      message:
-        "This category is not available for this listing type"
-    });
-  }
-}
-const now = new Date();
+      if (!category.availableIn?.includes(listingType)) {
+        return res.status(400).json({
+          success: false,
+          message: "This category is not available for this listing type"
+        });
+      }
+    }
 
-const subscription = await UserSubscription.findOne({
-  userId: req.user._id,
-  status: "active",
-  expiryDate: { $gte: now }
-}).sort({ createdAt: -1 });
+    let subscription = null;
 
-if (!subscription) {
-  return res.status(402).json({
-    success: false,
-    requiresSubscription: true,
-    requiresPayment: false,
-    code: "NO_ACTIVE_SUBSCRIPTION",
-    message:
-      "Please activate your selected subscription plan before posting."
-  });
-}
+    // Admin posting for a selected user skips subscription checks.
+    if (!isAdminPosting) {
+      subscription = await UserSubscription.findOne({
+        userId: sellerId,
+        status: "active",
+        expiryDate: { $gte: new Date() }
+      }).sort({ createdAt: -1 });
 
+      if (!subscription) {
+        return res.status(402).json({
+          success: false,
+          requiresSubscription: true,
+          requiresPayment: false,
+          code: "NO_ACTIVE_SUBSCRIPTION",
+          message: "Please activate your subscription before posting."
+        });
+      }
 
-if (subscription.remainingPosts <= 0) {
-  return res.status(402).json({
-    success: false,
-    requiresPayment: true,
-    message:
-      "Your post limit has been reached. Please purchase another plan."
-  });
-}
+      if (subscription.remainingPosts <= 0) {
+        return res.status(402).json({
+          success: false,
+          requiresPayment: true,
+          message: "Your post limit has been reached."
+        });
+      }
+    }
+
     const slug = `${makeSlug(title)}-${Date.now()}`;
 
-const post = await Post.create({
-  ...req.body,
+    const post = await Post.create({
+      ...req.body,
+      slug,
+      sellerId,
+      status: "pending"
+    });
 
-  slug,
+    if (subscription) {
+      subscription.remainingPosts = Math.max(
+        0,
+        Number(subscription.remainingPosts || 0) - 1
+      );
 
-  sellerId: req.user._id,
+      await subscription.save();
+    }
 
-  // Payment is already covered by the subscription.
-  // The post can now wait for admin approval.
-  status: "pending"
-});
-subscription.remainingPosts =
-  Math.max(
-    0,
-    Number(subscription.remainingPosts || 0) - 1
-  );
-
-await subscription.save();
-return res.status(201).json({
-  success: true,
-
-  requiresPayment: false,
-
-  message:
-    "Post created successfully and sent for admin approval.",
-
-  data: post
-});
+    return res.status(201).json({
+      success: true,
+      requiresPayment: false,
+      message: "Post created successfully and sent for admin approval.",
+      data: post
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
-
 const getPosts = async (req, res) => {
   try {
 
