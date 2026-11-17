@@ -121,13 +121,18 @@ const createPost = async (req, res) => {
 
     const slug = `${makeSlug(title)}-${Date.now()}`;
 
-    const post = await Post.create({
-      ...req.body,
-      slug,
-      sellerId,
-      status: "pending"
-    });
-
+   const post = await Post.create({
+  ...req.body,
+  slug,
+  sellerId,
+  status: isAdminPosting ? "approved" : "pending"
+});
+console.log("POST APPROVAL CHECK:", {
+  role: req.user.role,
+  selectedUserId: req.body.sellerId,
+  isAdminPosting,
+  statusToSave: isAdminPosting ? "approved" : "pending"
+});
     if (subscription) {
       subscription.remainingPosts = Math.max(
         0,
@@ -140,7 +145,9 @@ const createPost = async (req, res) => {
     return res.status(201).json({
       success: true,
       requiresPayment: false,
-      message: "Post created successfully and sent for admin approval.",
+     message: isAdminPosting
+  ? "Post created and approved successfully."
+  : "Post created successfully and sent for admin approval.",
       data: post
     });
   } catch (error) {
@@ -166,7 +173,9 @@ const getPosts = async (req, res) => {
       sort
     } = req.query;
 
-    const filter = {};
+    const filter = {
+  status: "approved"
+};
 
     // Keyword Search
     if (keyword) {
@@ -319,8 +328,39 @@ if (subcategoryId) {
 };
 const getPostById = async (req, res) => {
   try {
-    const post = await Post.findByIdAndUpdate(
-      req.params.id,
+    const id = req.params.id;
+
+    if (!/^[a-f\d]{24}$/i.test(id || "")) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post ID"
+      });
+    }
+
+    const filter = {
+      _id: id
+    };
+
+    const activeUser =
+      req.user && req.user.isActive !== false;
+
+    const isAdmin =
+      activeUser && req.user.role === "admin";
+
+    if (!isAdmin) {
+      filter.$or = [
+        { status: "approved" }
+      ];
+
+      if (activeUser) {
+        filter.$or.push({
+          sellerId: req.user._id
+        });
+      }
+    }
+
+    const post = await Post.findOneAndUpdate(
+      filter,
       { $inc: { viewsCount: 1 } },
       { new: true }
     )
@@ -335,12 +375,17 @@ const getPostById = async (req, res) => {
       });
     }
 
-    res.json({ success: true, data: post });
+    return res.status(200).json({
+      success: true,
+      data: post
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
-
 const uploadPostMedia = async (req, res) => {
   try {
     console.log("FILES:", req.files);
@@ -773,9 +818,10 @@ const getSellerPosts = async (req,res)=>{
 
   try{
 
-    const posts = await Post.find({
-      sellerId:req.params.sellerId
-    })
+  const posts = await Post.find({
+  sellerId: req.params.sellerId,
+  status: "approved"
+})
 .populate(
  "sellerId",
  "fullName mobile email image"
