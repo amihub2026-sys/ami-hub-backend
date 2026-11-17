@@ -80,6 +80,16 @@ router.get(
   postController.getSellerPosts
 );
 // Keep this dynamic route at the bottom
-router.get("/:id", postController.getPostById);
+router.get(
+  "/:id",
+  (req, res, next) => {
+    if (req.headers.authorization) {
+      return protect(req, res, next);
+    }
+
+    next();
+  },
+  postController.getPostById
+);
 
 module.exports = router;
