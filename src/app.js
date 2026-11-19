@@ -68,11 +68,16 @@ const app = express();
 // ============================================
 
 // Trusted frontend origins
+
+
 const allowedOrigins = new Set([
   "http://localhost:4200",
   "http://127.0.0.1:4200",
-  "https://ami-hub-node-sepia.vercel.app"
+  "https://ami-hub-node-sepia.vercel.app",
+  "https://amihub.in",
+  "https://www.amihub.in"
 ]);
+
 
 // Additional trusted frontend domains can be
 // configured in Render environment variables:
